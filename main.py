@@ -73,6 +73,11 @@ class GUI:
 		self.page_flip_window 		= self.interface.get_object("PageFlipWindow")			# Set Page Flipping (Shutter) Active
 		self.off_window 				= self.interface.get_object("OffWindow")			# Set Glasses Off
 		
+		# - Dual Output
+		self.doright 					= self.interface.get_object("do-right")
+		self.doleft 					= self.interface.get_object("do-left")
+		self.dualoutput_window 		= self.interface.get_object("dualoutputWindow")			# Window for displaying two images
+		
 		# - Switching menus
 		# # Eyes
 		self.re_menu 	= self.interface.get_object("right_eye_menu")
@@ -84,6 +89,7 @@ class GUI:
 		
 		# # Stereo Mode
 		self.imode_menu		= self.interface.get_object("inter_mode_menu")
+		self.domode_menu		= self.interface.get_object("dualout_mode_menu")
 		self.amode_menu		= self.interface.get_object("ana_mode_menu")
 		self.tbmode_menu	= self.interface.get_object("top_bottom_menu")
 		self.lrmode_menu	= self.interface.get_object("left_right_menu")
@@ -141,7 +147,6 @@ class GUI:
 
 	# #
 	# Call-Back functions for events	
-
 	def delete_event(self, widget, event=None, data=None): # Clean Closing
 		print "Delete event"
 		self.off_flash()
@@ -152,8 +157,6 @@ class GUI:
 		print "Destroy"
 		self.off_flash()
 		gtk.timeout_add(1000, gtk.main_quit)
-		
-	
 
 	def swap_eyes_button(self, button):
 		if self.re_menu.get_active() == True:
@@ -210,7 +213,6 @@ class GUI:
 			self.options_dialog.hide()
 			
 	def file_open(self, button):
-		
 		dialog = gtk.FileChooserDialog("Open Stereoscopic Image", None, gtk.FILE_CHOOSER_ACTION_OPEN, (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_OPEN, gtk.RESPONSE_OK))
 		
 		dialog.set_default_response(gtk.RESPONSE_OK)
@@ -251,7 +253,6 @@ class GUI:
 		dialog.destroy()
 	
 	def open_ana(self, button):
-		
 		dialog = gtk.FileChooserDialog("Open Anaglyph Image", None, gtk.FILE_CHOOSER_ACTION_OPEN, (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_OPEN, gtk.RESPONSE_OK))
 		
 		dialog.set_default_response(gtk.RESPONSE_OK)
@@ -391,6 +392,26 @@ class GUI:
 				self.flag = False		
 		else:
 			print "Change to left/right value ignored because flag set"	
+	
+	def switch2dualoutput(self, button):
+		if self.flag == False:
+			print "Clicked dual-output"
+			self.flag = True
+			if self.domode_menu.get_active() == True:		
+				print "Just selected dual-output, so deselecting others"						
+				self.amode_menu.set_active(False)
+				self.lrmode_menu.set_active(False)
+				self.tbmode_menu.set_active(False)
+				self.imode_menu.set_active(False)
+				self.checkerboard_menu.set_active(False)
+				self.flag = False
+				self.change_mode(6)
+			else:
+				print "Just tried to deselect dual-output, so set it again because we don't want nothing selected"
+				self.domode_menu.set_active(True)
+				self.flag = False
+		else:
+			print "Change to dual-output value ignored because flag set"	
 
 	def switch2checkerboard(self, button):
 		if self.flag == False:
@@ -466,16 +487,12 @@ class GUI:
 			self.conf['mode'] = "HSYNC" # Dual Projector / Planar
 		elif mode == 5:
 			self.conf['mode'] = "CHECKERBOARD" # Checkerboard for DLP
+		elif mode == 6:
+			self.conf['mode'] = "DUALOUTPUT" # Checkerboard for DLP
 		try:
 			self.modify_image()
 		except:
-			print "Mode is changed, but image can not be changed"
-		
-	#def change_eye(self, mode):
-	#	if mode == 0:
-	#		self.eye = "right"
-	#	else:
-	#		self.eye = "left"
+			print "Mode changed, but image can not be modified"
 
 	def change_image(self,mode=1):
 		extension 	= "jps" # Extension autorise
@@ -509,8 +526,19 @@ class GUI:
 			else:
 				print "Not Swapping eyes"
 			self.stereoIMG.make_stereo(self.max_img_height, self.max_img_width, self.vergence, self.conf['mode'])
-			pixbuf = self.image_to_pixbuf( self.stereoIMG.get_image() )
-			self.stereo.set_from_pixbuf(pixbuf) # Affichage
+			if self.conf['mode'] != "DUALOUTPUT":
+				pixbuf = self.image_to_pixbuf( self.stereoIMG.get_image() )
+				self.stereo.set_from_pixbuf(pixbuf) # Affichage
+			else:
+				images = self.stereoIMG.get_images()
+				left = self.image_to_pixbuf( images[0] )
+				right = self.image_to_pixbuf( images[1] )
+				self.doleft.set_from_pixbuf(left) # displaying
+				self.doright.set_from_pixbuf(right) # displaying
+				location = self.window.get_position()
+				self.dualoutput_window.move(location[0],location[1])
+				self.dualoutput_window.fullscreen()
+				self.dualoutput_window.show()
 			#except:
 			#	print "Image doesn't exist !"
 	
@@ -518,8 +546,19 @@ class GUI:
 		maxh, maxw = self.max_img_height*(1 + self.zoom_percent), self.max_img_width*(1 + self.zoom_percent)
 		self.stereoIMG.make_stereo(maxh, maxw, self.vergence, self.conf['mode'], force, normale)
 		print "Modification: Vergence=",self.vergence ," Mode=",self.conf['mode'], "Zoom=", self.zoom_percent
-		pixbuf = self.image_to_pixbuf( self.stereoIMG.get_image() )
-		self.stereo.set_from_pixbuf(pixbuf) # Affichage
+		if self.conf['mode'] != "DUALOUTPUT":
+			pixbuf = self.image_to_pixbuf( self.stereoIMG.get_image() )
+			self.stereo.set_from_pixbuf(pixbuf) # Affichage
+		else:
+			images = self.stereoIMG.get_images()
+			left = self.image_to_pixbuf( images[0] )
+			right = self.image_to_pixbuf( images[1] )
+			self.doleft.set_from_pixbuf(left) # displaying
+			self.doright.set_from_pixbuf(right) # displaying
+			location = self.window.get_position()
+			self.dualoutput_window.move(location[0],location[1])
+			self.dualoutput_window.fullscreen()
+			self.dualoutput_window.show()
 				
 	def image_to_pixbuf(self,image):
 		fd = StringIO.StringIO()

@@ -182,6 +182,8 @@ class stereoIMG:
 		elif mode == "CHECKERBOARD":
 			rep = self.make_checkerboard(decallage)
 			return rep
+		elif mode == "DUALOUTPUT":
+			return True
 		else:
 			print "Aucun mode de rendu"
 			return False
@@ -312,6 +314,10 @@ class stereoIMG:
 	def get_image(self):
 		return self.stereo
 		
+	def get_images(self):
+		images = [self.left, self.right]
+		return images
+	
 	#
 	# Fonction de redimensionnement
 	#
