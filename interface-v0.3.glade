@@ -132,7 +132,26 @@
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">Dual Output</property>
                         <property name="use_underline">True</property>
+                        <property name="draw_as_radio">True</property>
                         <signal name="toggled" handler="switch2dualoutput"/>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkCheckMenuItem" id="shutter_mode_menu">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Shutters</property>
+                        <property name="use_underline">True</property>
+                        <property name="draw_as_radio">True</property>
+                        <signal name="toggled" handler="switch2shutters"/>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkCheckMenuItem" id="checkerboard_menu">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Checkerboard</property>
+                        <property name="use_underline">True</property>
+                        <property name="draw_as_radio">True</property>
+                        <signal name="toggled" handler="switch2checkerboard"/>
                       </object>
                     </child>
                     <child>
@@ -151,15 +170,6 @@
                         <property name="use_underline">True</property>
                         <property name="draw_as_radio">True</property>
                         <signal name="toggled" handler="switch2leftright"/>
-                      </object>
-                    </child>
-                    <child>
-                      <object class="GtkCheckMenuItem" id="checkerboard_menu">
-                        <property name="visible">True</property>
-                        <property name="label" translatable="yes">Checkerboard</property>
-                        <property name="use_underline">True</property>
-                        <property name="draw_as_radio">True</property>
-                        <signal name="toggled" handler="switch2checkerboard"/>
                       </object>
                     </child>
                     <child>
@@ -249,10 +259,10 @@
               <object class="GtkToolButton" id="unzoom">
                 <property name="visible">True</property>
                 <property name="is_important">True</property>
-                <property name="label" translatable="yes">-</property>
+                <property name="label" translatable="yes">unzoom</property>
                 <property name="use_underline">True</property>
                 <property name="stock_id">gtk-zoom-out</property>
-                <signal name="clicked" handler="unzoom"/>
+                <signal name="clicked" handler="size"/>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -260,12 +270,12 @@
               </packing>
             </child>
             <child>
-              <object class="GtkToolButton" id="toolbutton1">
+              <object class="GtkToolButton" id="normalsize">
                 <property name="visible">True</property>
-                <property name="label" translatable="yes">toolbutton</property>
+                <property name="label" translatable="yes">normale</property>
                 <property name="use_underline">True</property>
                 <property name="stock_id">gtk-zoom-100</property>
-                <signal name="clicked" handler="taille_normale"/>
+                <signal name="clicked" handler="size"/>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -275,10 +285,10 @@
             <child>
               <object class="GtkToolButton" id="echelle">
                 <property name="visible">True</property>
-                <property name="label" translatable="yes">toolbutton7</property>
+                <property name="label" translatable="yes">scale</property>
                 <property name="use_underline">True</property>
                 <property name="stock_id">gtk-zoom-fit</property>
-                <signal name="clicked" handler="echelle"/>
+                <signal name="clicked" handler="size"/>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -289,10 +299,10 @@
               <object class="GtkToolButton" id="zoom">
                 <property name="visible">True</property>
                 <property name="is_important">True</property>
-                <property name="label" translatable="yes">+</property>
+                <property name="label" translatable="yes">zoom</property>
                 <property name="use_underline">True</property>
                 <property name="stock_id">gtk-zoom-in</property>
-                <signal name="clicked" handler="zoom"/>
+                <signal name="clicked" handler="size"/>
               </object>
               <packing>
                 <property name="expand">False</property>

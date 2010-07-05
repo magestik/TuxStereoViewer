@@ -33,40 +33,21 @@ class GUI:
 		self.window.set_icon( gtk.gdk.pixbuf_new_from_file('/usr/share/pixmaps/TuxStereoViewer-icon.png') ) # Thx H4X0R666 for the icon
 		self.window.maximize()												# Maximiser la fenetre
 		
+		self.window.connect("destroy", self.destroy)
+		self.window.connect("delete_event", self.delete_event)
+
+		self.src_info			= os.path.split(fopen)
+		self.window_mode 		= 0 # 1 = Fullscren ; 0 = Windowed
+		self.zoom_percent		= 0 # Zoom (in %)
+		self.vergence 			= 0 # Vergence (in px)
 		self.flag 				= False
-		self.window_mode 		= 0 # Variable used for define fullscreen or maximized window
-		self.src_info			= os.path.split(fopen) # All about file to open (fopen)
-		self.zoom_percent		= 0
+		self.lib 				= False
 		self.getConfig()
-		self.vergence 			= 0 # Puissance de l'effet 3D -> decallage horizontale
-		
-		# Connexions : Events -> Callback
-		self.window.connect("destroy", self.destroy) 			# Fermeture propre
-		self.window.connect("delete_event", self.delete_event) 	# Femeture par la croix
-		
-		# - Shortcut
-		#	# Zoom
-		self.increase_bouton	= self.interface.get_object("zoom")
-		self.reset_x_bouton	= self.interface.get_object("echelle")
-		self.decrease_bouton	= self.interface.get_object("unzoom")
-		#	# Images
-		self.fscreen_bouton 	= self.interface.get_object("full_screen")
-		#	# 3D Effects
-		self.increase_bouton	= self.interface.get_object("increase")
-		self.reset_x_bouton	= self.interface.get_object("reset_x")
-		self.decrease_bouton	= self.interface.get_object("decrease")
 		
 		# - Menus
 		self.menubar 			= self.interface.get_object("menubar")
 		self.about_dialog 	= self.interface.get_object("about")
 		self.options_dialog 	= self.interface.get_object("options")
-		
-		# - Windows for eDimensional activations
-		self.interlaced_on_window 	= self.interface.get_object("InterlacedOnWindow") 		# Set Interlaced Active
-		self.int_reverse_window 	= self.interface.get_object("InterlacedReverseWindow")  # Set Interlaced (revesed) Active
-		self.sync_doubling_window 	= self.interface.get_object("SyncDoublingWindow") 		# Set SyncDoubling (top/bottom) Active
-		self.page_flip_window 		= self.interface.get_object("PageFlipWindow")			# Set Page Flipping (Shutter) Active
-		self.off_window 				= self.interface.get_object("OffWindow")			# Set Glasses Off
 		
 		# - Dual Output
 		self.doright 					= self.interface.get_object("do-right")
@@ -86,9 +67,11 @@ class GUI:
 		self.imode_menu		= self.interface.get_object("inter_mode_menu")
 		self.domode_menu		= self.interface.get_object("dualout_mode_menu")
 		self.amode_menu		= self.interface.get_object("ana_mode_menu")
-		self.tbmode_menu	= self.interface.get_object("top_bottom_menu")
-		self.lrmode_menu	= self.interface.get_object("left_right_menu")
+		self.smode_menu		= self.interface.get_object("shutter_mode_menu")
 		self.checkerboard_menu 	= self.interface.get_object("checkerboard_menu")
+		
+		# self.tbmode_menu	= self.interface.get_object("top_bottom_menu")
+		# self.lrmode_menu	= self.interface.get_object("left_right_menu")
 		if self.conf['mode'] == "INTERLACED":
 			self.imode_menu.set_active(True)
 		else:
@@ -112,12 +95,14 @@ class GUI:
 
 		print self.window.set_screen(gtk.gdk.screen_get_default())
 		
+		self.set_mode( self.conf['mode'] )
+		
 		self.stereoIMG = stereoIMG.stereoIMG()
 		self.stereoIMG.vsep = 0
 		# - Displaying
 		self.stereo = self.interface.get_object("stereo")
 		self.window.show()
-		self.max_img_height, self.max_img_width = self.stereo.allocation.height, self.stereo.allocation.width
+
 		self.display_image(fopen)
 	
 	def saveConfig(self):
@@ -166,14 +151,14 @@ class GUI:
 	# Call-Back functions for events	
 	def delete_event(self, widget, event=None, data=None): # Clean Closing
 		print "Delete event"
-		#self.off_flash()
+		self.img.__del__()
 		self.saveConfig()
 		gtk.timeout_add(1000, gtk.main_quit)
 		return True # Do not allow OS to destroy we will kill ourselves in due time
 
 	def destroy(self, widget, data=None): # Closing
 		print "Destroy"
-		#self.off_flash()
+		self.img.__del__()
 		self.saveConfig()
 		gtk.timeout_add(1000, gtk.main_quit)
 
@@ -182,22 +167,20 @@ class GUI:
 			self.le_menu.set_active(True)
 		else:
 			self.re_menu.set_active(True)
-
-	def zoom(self, button):
-		self.zoom_percent += 0.1
-		self.modify_image() # "1" is to force redimesionning
 	
-	def taille_normale(self, button):
-		self.zoom_percent = 0
-		self.modify_image(0,1)
-				
-	def echelle(self, button):
-		self.zoom_percent = 0
-		self.modify_image()
-		
-	def unzoom(self, button):
-		self.zoom_percent -= 0.1
-		self.modify_image()
+	def size(self, button):	
+		if button.get_label() == 'unzoom':
+			self.zoom_percent -= 0.1
+			self.modify_image()
+		elif button.get_label() == 'zoom':
+			self.zoom_percent += 0.1
+			self.modify_image()
+		elif button.get_label() == 'scale':
+			self.zoom_percent += 0.1
+			self.modify_image()
+		elif button.get_label() == 'normale':
+			self.zoom_percent = 0
+			self.modify_image(0,1)
 		
 	def increase(self, button):
 		self.vergence += 1
@@ -268,7 +251,6 @@ class GUI:
 			self.display_image(fopen)
 		elif response == gtk.RESPONSE_CANCEL:
 			print 'File selection aborted'
-		
 		dialog.destroy()
 	
 	def open_ana(self, button):
@@ -297,20 +279,17 @@ class GUI:
 			self.display_image(fopen, True)
 		elif response == gtk.RESPONSE_CANCEL:
 			print 'File selection aborted'
-		
 		dialog.destroy()
 
-	def full_screen(self, button): # Passage en plein ecran
+	def full_screen(self, button):
 		# TODO :: Ouverture d'une pop-up sur fond noir en plein ecran
 		if self.window_mode == 0:	
-			print "full screen"
 			self.window_mode = 1
 			self.window.fullscreen()
 			screen = self.window.get_screen()
 			self.max_img_height, self.max_img_width = screen.get_width(), screen.get_height()
 			self.modify_image()
 		else:
-			print "unfull screen"
 			self.window_mode = 0
 			self.window.unfullscreen()
 			self.max_img_height, self.max_img_width = self.stereo.allocation.height, self.stereo.allocation.width
@@ -320,140 +299,93 @@ class GUI:
 		if button.get_label() == '>>':
 			self.change_image(1)
 		elif button.get_label() == '<<':
-			elf.change_image(-1)	
+			self.change_image(-1)
 	
 	def switch2ana(self, button):
-		if self.flag == False: # Not already running
-			print "Clicked anglyph"
-			self.flag = True # Set flag so code for interlace button knows we are running
-			if self.amode_menu.get_active() == True:	
-				print "Just selected anaglyph, so deselecting others"			
-				self.imode_menu.set_active(False)
-				self.lrmode_menu.set_active(False)
-				self.tbmode_menu.set_active(False)
-				self.checkerboard_menu.set_active(False)
-				self.flag = False # No risk of changing interlace button now
-				print "Now changing mode"								
-				self.change_mode(1)
-				print "Calling dongle code"
-				self.off_flash()
+		if self.flag == False:
+			self.flag = True
+			if self.amode_menu.get_active() == True:
+				self.set_mode("ANAGLYPH")
+				self.flag = False
 			else:
-				print "Just tried to deselect anaglyph, so set it again because we don't want nothing selected"
 				self.amode_menu.set_active(True)
 				self.flag = False		
 		else:
-			print "Change to anaglyph value ignored because flag set"
+			print "Change value ignored because flag set"
 			
 				
 	def switch2inter(self, button):
 		if self.flag == False:
-			print "Clicked interlaced"
 			self.flag = True
-			if self.imode_menu.get_active() == True:		
-				print "Just selected interlace, so deselecting others"						
-				self.amode_menu.set_active(False)
-				self.lrmode_menu.set_active(False)
-				self.tbmode_menu.set_active(False)
-				self.checkerboard_menu.set_active(False)
+			if self.imode_menu.get_active() == True:
+				self.set_mode("INTERLACED")
 				self.flag = False
-				print "Calling dongle code"
-				self.interlace_flash() # active before changing mode
-				print "Now changing mode"				
-				self.change_mode(0)
 			else:
-				print "Just tried to deselect interlace, so set it again because we don't want nothing selected"
 				self.imode_menu.set_active(True)
 				self.flag = False		
 		else:
-			print "Change to interlace value ignored because flag set"
+			print "Change value ignored because flag set"
 			
 	def switch2topbottom(self, button):
 		if self.flag == False:
-			print "Clicked top/bottom"
 			self.flag = True
-			if self.tbmode_menu.get_active() == True:		
-				print "Just selected top/bottom, so deselecting others"						
-				self.amode_menu.set_active(False)
-				self.imode_menu.set_active(False)
-				self.lrmode_menu.set_active(False)
-				self.checkerboard_menu.set_active(False)
+			if self.tbmode_menu.get_active() == True:
+				self.set_mode(3)
 				self.flag = False
-				print "Calling dongle code"
-				self.vsync_flash() # active before changing mode
-				print "Now changing mode"				
-				self.change_mode(3)
 			else:
-				print "Just tried to deselect top/bottom, so set it again because we don't want nothing selected"
 				self.imode_menu.set_active(True)
 				self.flag = False		
 		else:
-			print "Change to top/bottom value ignored because flag set"
+			print "Change value ignored because flag set"
 	
 	def switch2leftright(self, button):
 		if self.flag == False:
-			print "Clicked left/right"
 			self.flag = True
-			if self.lrmode_menu.get_active() == True:		
-				print "Just selected left/right, so deselecting others"						
-				self.amode_menu.set_active(False)
-				self.imode_menu.set_active(False)
-				self.tbmode_menu.set_active(False)
-				self.checkerboard_menu.set_active(False)
+			if self.lrmode_menu.get_active() == True:
+				self.set_mode(4)
 				self.flag = False
-				print "Now changing mode"				
-				self.change_mode(4)
-				print "Calling dongle code"
-				self.off_flash() # active before changing mode
-
 			else:
-				print "Just tried to deselect left/right, so set it again because we don't want nothing selected"
 				self.imode_menu.set_active(True)
 				self.flag = False		
 		else:
-			print "Change to left/right value ignored because flag set"	
+			print "Change value ignored because flag set"	
 	
 	def switch2dualoutput(self, button):
 		if self.flag == False:
-			print "Clicked dual-output"
 			self.flag = True
-			if self.domode_menu.get_active() == True:		
-				print "Just selected dual-output, so deselecting others"						
-				self.amode_menu.set_active(False)
-				self.lrmode_menu.set_active(False)
-				self.tbmode_menu.set_active(False)
-				self.imode_menu.set_active(False)
-				self.checkerboard_menu.set_active(False)
+			if self.domode_menu.get_active() == True:
+				self.set_mode("DUALOUTPUT")
 				self.flag = False
-				self.change_mode(6)
 			else:
-				print "Just tried to deselect dual-output, so set it again because we don't want nothing selected"
 				self.domode_menu.set_active(True)
 				self.flag = False
 		else:
-			print "Change to dual-output value ignored because flag set"	
+			print "Change value ignored because flag set"	
 
 	def switch2checkerboard(self, button):
 		if self.flag == False:
-			print "Clicked left/right"
 			self.flag = True
-			if self.checkerboard_menu.get_active() == True:		
-				print "Just selected left/right, so deselecting others"						
-				self.amode_menu.set_active(False)
-				self.imode_menu.set_active(False)
-				self.tbmode_menu.set_active(False)
-				self.lrmode_menu.set_active(False)
+			if self.checkerboard_menu.get_active() == True:	
+				self.set_mode("CHECKERBOARD")
 				self.flag = False
-				print "Now changing mode"				
-				self.change_mode(5)
-				print "Calling dongle code"
-				self.off_flash() # active before changing mode
 			else:
-				print "Just tried to deselect left/right, so set it again because we don't want nothing selected"
 				self.checkerboard_menu.set_active(True)
 				self.flag = False		
 		else:
-			print "Change to left/right value ignored because flag set"	
-		
+			print "Change value ignored because flag set"	
+	
+	def switch2shutters(self, button):
+		if self.flag == False:
+			self.flag = True
+			if self.smode_menu.get_active() == True:	
+				self.set_mode("SHUTTERS")
+				self.flag = False
+			else:
+				self.smode_menu.set_active(True)
+				self.flag = False		
+		else:
+			print "Change value ignored because flag set"
+					
 	def switch2right(self, button):
 		if self.flag == False:
 			print "Clicked right eye"
@@ -493,34 +425,49 @@ class GUI:
 
 	# #
 	# Fonctions diverses
-	def change_mode(self, mode):
-		if mode == 0:
+	def set_mode(self, mode):
+		if self.lib != False:
+			self.img.__del__() # Delete the class
+		else:
+			self.lib = True
+		
+		if mode == "INTERLACED":
 			import lib_interlaced
 			self.img = lib_interlaced.Interlaced()
 			self.conf['mode'] = "INTERLACED" # Polarized Monitors (Zalman,IZ3D) / eDimensional
-		elif mode == 1:
+			self.onModeChange(False, True, False, False, False)
+		elif mode == "ANAGLYPH":
 			import lib_anaglyph
 			self.img = lib_anaglyph.Anaglyph()
-			self.conf['mode'] = "ANAGLYPH"
-		elif mode == 2:
+			self.conf['mode'] = "ANAGLYPH" # red/cyan
+			self.onModeChange(True, False, False, False, False)
+		elif mode == "SHUTTERS":
 			import lib_shutter
 			self.img = lib_shutter.Shutter()
 			self.conf['mode'] = "SHUTTERS" # Nvidia 3D Vision / eDimensional
-		elif mode == 3:
-			self.conf['mode'] = "VSYNC" # Dual Projector / eDimensional
-		elif mode == 4:
-			self.conf['mode'] = "HSYNC" # Dual Projector / Planar
-		elif mode == 5:
-			self.conf['mode'] = "CHECKERBOARD" # Checkerboard for DLP
-		elif mode == 6:
+			self.onModeChange(False, False, True, False, False)
+		elif mode == "DUALOUTPUT":
 			import lib_dualoutput
 			self.img = lib_dualoutput.DualOutput()
 			self.conf['mode'] = "DUALOUTPUT"
+			self.onModeChange(False, False, False, True, False)
+		elif mode == "CHECKERBOARD":
+			import lib_checkerboard
+			self.img = lib_checkerboard.CheckerBoard()
+			self.conf['mode'] = "CHECKERBOARD"
+			self.onModeChange(False, False, False, False, True)
 		try:
 			self.modify_image()
 		except:
 			print "Mode changed, but image can not be modified"
-
+	
+	def onModeChange(self, ana, int, shu, dout, che):
+		self.amode_menu.set_active(ana) # Anaglyph
+		self.imode_menu.set_active(int) # Interlaced
+		self.smode_menu.set_active(shu) # Shutters
+		self.domode_menu.set_active(dout) # Dual Out
+		self.checkerboard_menu.set_active(che) # Checkerboard
+		
 	def change_image(self,mode=1):
 		extension 	= "jps" # Extension autorise
 		path 			= self.src_info[0] # dossier ou chercher
@@ -541,19 +488,19 @@ class GUI:
 		self.src_info	= os.path.split(fichiers[index]) # Mise a jour
 		self.display_image(fichiers[index])
 				
-	def display_image(self, fopen="None", anaglyph=False): # Afichage d'une image (ouverture)
+	def display_image(self, fopen="None", anaglyph=False): # Opening an image
 		if fopen != "None":
-			#print image.get_mode()
-			print "Opening " + fopen + " : " + self.conf['mode']
-			#try:
-			self.img.image.set_sources_from_stereo(fopen,anaglyph)	# (fopen, True) -> si anaglyphe			
+			self.img.open(fopen, anaglyph) # anaglyph = Trus if the image is an anaglyph
+			
 			if self.re_menu.get_active() == True:
 				print "Swapping eyes"
 				self.img.image.swap_eyes()
 			else:
 				print "Not Swapping eyes"
 			
-			get 	= self.img.make()
+			size = {}
+			size[0], size[1] = self.stereo.allocation.height, self.stereo.allocation.width
+			get 	= self.img.make(size)
 			
 			if self.conf['mode'] != "DUALOUTPUT":
 				pixbuf = self.image_to_pixbuf( get )
@@ -567,14 +514,12 @@ class GUI:
 				self.dualoutput_window.move(location[0],location[1])
 				self.dualoutput_window.fullscreen()
 				self.dualoutput_window.show()
-			#except:
-			#	print "Image doesn't exist !"
 	
-	def modify_image(self, force=0, normale=0): # Affichage d'une image (modification)
-		maxh, maxw = self.max_img_height*(1 + self.zoom_percent), self.max_img_width*(1 + self.zoom_percent)
-		
-		get 	= self.img.make()
-		print "Modification: Vergence=",self.vergence ," Mode=",self.conf['mode'], "Zoom=", self.zoom_percent
+	def modify_image(self, force=0, normale=0): # Redisplaying the image including changes (size, vergence ...)
+		size = {}
+		size[0], size[1] = self.max_img_height*(1 + self.zoom_percent), self.max_img_width*(1 + self.zoom_percent)
+		get 	= self.img.make(size)
+
 		if self.conf['mode'] != "DUALOUTPUT":
 			pixbuf = self.image_to_pixbuf( get )
 			self.stereo.set_from_pixbuf(pixbuf) # Affichage
