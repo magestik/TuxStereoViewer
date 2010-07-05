@@ -274,7 +274,8 @@ class stereoIMG:
 	def make_anaglyph(self, decallage):
 		if self.ana == True:
 			self.right, self.left 	= self.oright, self.oleft
-				
+		
+		# better with an array [0], [1], [2]
 		rg, vg, bg 	= self.left.split() # Left = Red
 		rd, vd, bd 	= self.right.split() # Right = Cyan
 

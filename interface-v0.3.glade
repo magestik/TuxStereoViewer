@@ -315,7 +315,7 @@
                 <property name="label" translatable="yes">toolbutton</property>
                 <property name="use_underline">True</property>
                 <property name="stock_id">gtk-goto-first</property>
-                <signal name="clicked" handler="back"/>
+                <signal name="clicked" handler="change"/>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -343,7 +343,7 @@
                 <property name="label" translatable="yes">&gt;&gt;</property>
                 <property name="use_underline">True</property>
                 <property name="stock_id">gtk-goto-last</property>
-                <signal name="clicked" handler="forward"/>
+                <signal name="clicked" handler="change"/>
               </object>
               <packing>
                 <property name="expand">False</property>

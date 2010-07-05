@@ -18,8 +18,6 @@ import stereoIMG 		# Import du module de transformation en S-3D
 import StringIO		# Conversion PIL -> Pixbuf
 import sys, os, glob, getopt, time
 
-#sys.path.append('/ufs/guido/lib/python')
-
 # == Interface
 class GUI:	
 	def main(self): # Boucle principale
@@ -35,12 +33,11 @@ class GUI:
 		self.window.set_icon( gtk.gdk.pixbuf_new_from_file('/usr/share/pixmaps/TuxStereoViewer-icon.png') ) # Thx H4X0R666 for the icon
 		self.window.maximize()												# Maximiser la fenetre
 		
-		self.flag 				= False # Used for swithes (right<->left; interlaced<->anaglyph) --> Thx MickeyJaw !
+		self.flag 				= False
 		self.window_mode 		= 0 # Variable used for define fullscreen or maximized window
 		self.src_info			= os.path.split(fopen) # All about file to open (fopen)
-		self.zoom_percent		= 0 # Zoom
+		self.zoom_percent		= 0
 		self.getConfig()
-		#self.stereo_mode 		= "INTERLACED"
 		self.vergence 			= 0 # Puissance de l'effet 3D -> decallage horizontale
 		
 		# Connexions : Events -> Callback
@@ -50,20 +47,18 @@ class GUI:
 		# - Shortcut
 		#	# Zoom
 		self.increase_bouton	= self.interface.get_object("zoom")
-		self.reset_x_bouton		= self.interface.get_object("echelle")
+		self.reset_x_bouton	= self.interface.get_object("echelle")
 		self.decrease_bouton	= self.interface.get_object("unzoom")
 		#	# Images
 		self.fscreen_bouton 	= self.interface.get_object("full_screen")
-		self.forward_bouton		= self.interface.get_object("forward")
-		self.back_bouton		= self.interface.get_object("back")
 		#	# 3D Effects
 		self.increase_bouton	= self.interface.get_object("increase")
-		self.reset_x_bouton		= self.interface.get_object("reset_x")
+		self.reset_x_bouton	= self.interface.get_object("reset_x")
 		self.decrease_bouton	= self.interface.get_object("decrease")
 		
 		# - Menus
 		self.menubar 			= self.interface.get_object("menubar")
-		self.about_dialog 		= self.interface.get_object("about")
+		self.about_dialog 	= self.interface.get_object("about")
 		self.options_dialog 	= self.interface.get_object("options")
 		
 		# - Windows for eDimensional activations
@@ -125,6 +120,28 @@ class GUI:
 		self.max_img_height, self.max_img_width = self.stereo.allocation.height, self.stereo.allocation.width
 		self.display_image(fopen)
 	
+	def saveConfig(self):
+		home 	= os.path.expanduser("~")
+		dir   = '/.stereo3D/'
+		name 	= 'general.conf'
+		path =  home + dir + name
+		file = ''
+		try:
+			conf = open(path)
+			for line in conf.readlines():
+				if line.find('=') > 0:
+					key, value = line[0:].split(" = ",2)
+					file = file + key + ' = ' + self.conf[key] + '\n'
+				else:
+					file = file + line
+			conf.close()
+		except:
+			print "Error while saving config file !"
+		
+		conf = open(path, 'w')
+		conf.write(file)
+		conf.close()
+		
 	def getConfig(self):
 		home 	= os.path.expanduser("~")
 		dir   = '/.stereo3D/'
@@ -149,13 +166,15 @@ class GUI:
 	# Call-Back functions for events	
 	def delete_event(self, widget, event=None, data=None): # Clean Closing
 		print "Delete event"
-		self.off_flash()
+		#self.off_flash()
+		self.saveConfig()
 		gtk.timeout_add(1000, gtk.main_quit)
 		return True # Do not allow OS to destroy we will kill ourselves in due time
 
 	def destroy(self, widget, data=None): # Closing
 		print "Destroy"
-		self.off_flash()
+		#self.off_flash()
+		self.saveConfig()
 		gtk.timeout_add(1000, gtk.main_quit)
 
 	def swap_eyes_button(self, button):
@@ -193,11 +212,11 @@ class GUI:
 		self.modify_image()
 
 	def increaseVsep(self, button):
-		self.stereoIMG.vsep += 1
+		self.img.image.vsep += 1
 		self.modify_image()
 
 	def decreaseVsep(self, button):
-		self.stereoIMG.vsep -= 1
+		self.img.image.vsep -= 1
 		self.modify_image()
 		
 	def about(self, button): # Pop-up about
@@ -296,12 +315,12 @@ class GUI:
 			self.window.unfullscreen()
 			self.max_img_height, self.max_img_width = self.stereo.allocation.height, self.stereo.allocation.width
 			self.modify_image()
-			
-	def forward(self, button):
-		self.change_image(1)
 	
-	def back(self, button):
-		self.change_image(-1)		
+	def change(self, button):
+		if button.get_label() == '>>':
+			self.change_image(1)
+		elif button.get_label() == '<<':
+			elf.change_image(-1)	
 	
 	def switch2ana(self, button):
 		if self.flag == False: # Not already running
@@ -312,7 +331,7 @@ class GUI:
 				self.imode_menu.set_active(False)
 				self.lrmode_menu.set_active(False)
 				self.tbmode_menu.set_active(False)
-				self.checkerboard_menu.set_active(False)		
+				self.checkerboard_menu.set_active(False)
 				self.flag = False # No risk of changing interlace button now
 				print "Now changing mode"								
 				self.change_mode(1)
@@ -444,7 +463,7 @@ class GUI:
 				self.le_menu.set_active(False) # desactiver gauche
 				self.flag = False
 				print "Switching to right eye"
-				self.stereoIMG.swap_eyes()
+				self.img.image.swap_eyes()
 				self.modify_image()
 			else:
 				print "Just tried to deselect right, so set it again because we don't want nothing selected"
@@ -462,7 +481,7 @@ class GUI:
 				self.re_menu.set_active(False) # desactiver droit
 				self.flag = False
 				print "Switching to left eye"
-				self.stereoIMG.swap_eyes()
+				self.img.image.swap_eyes()
 				self.modify_image()
 			else:
 				print "Just tried to deselect left, so set it again because we don't want nothing selected"
@@ -476,10 +495,16 @@ class GUI:
 	# Fonctions diverses
 	def change_mode(self, mode):
 		if mode == 0:
+			import lib_interlaced
+			self.img = lib_interlaced.Interlaced()
 			self.conf['mode'] = "INTERLACED" # Polarized Monitors (Zalman,IZ3D) / eDimensional
 		elif mode == 1:
+			import lib_anaglyph
+			self.img = lib_anaglyph.Anaglyph()
 			self.conf['mode'] = "ANAGLYPH"
 		elif mode == 2:
+			import lib_shutter
+			self.img = lib_shutter.Shutter()
 			self.conf['mode'] = "SHUTTERS" # Nvidia 3D Vision / eDimensional
 		elif mode == 3:
 			self.conf['mode'] = "VSYNC" # Dual Projector / eDimensional
@@ -488,7 +513,9 @@ class GUI:
 		elif mode == 5:
 			self.conf['mode'] = "CHECKERBOARD" # Checkerboard for DLP
 		elif mode == 6:
-			self.conf['mode'] = "DUALOUTPUT" # Checkerboard for DLP
+			import lib_dualoutput
+			self.img = lib_dualoutput.DualOutput()
+			self.conf['mode'] = "DUALOUTPUT"
 		try:
 			self.modify_image()
 		except:
@@ -519,20 +546,21 @@ class GUI:
 			#print image.get_mode()
 			print "Opening " + fopen + " : " + self.conf['mode']
 			#try:
-			self.stereoIMG.set_sources_from_stereo(fopen,anaglyph)	# (fopen, True) -> si anaglyphe			
+			self.img.image.set_sources_from_stereo(fopen,anaglyph)	# (fopen, True) -> si anaglyphe			
 			if self.re_menu.get_active() == True:
 				print "Swapping eyes"
-				self.stereoIMG.swap_eyes()
+				self.img.image.swap_eyes()
 			else:
 				print "Not Swapping eyes"
-			self.stereoIMG.make_stereo(self.max_img_height, self.max_img_width, self.vergence, self.conf['mode'])
+			
+			get 	= self.img.make()
+			
 			if self.conf['mode'] != "DUALOUTPUT":
-				pixbuf = self.image_to_pixbuf( self.stereoIMG.get_image() )
+				pixbuf = self.image_to_pixbuf( get )
 				self.stereo.set_from_pixbuf(pixbuf) # Affichage
 			else:
-				images = self.stereoIMG.get_images()
-				left = self.image_to_pixbuf( images[0] )
-				right = self.image_to_pixbuf( images[1] )
+				left = self.image_to_pixbuf( get[0] )
+				right = self.image_to_pixbuf( get[1] )
 				self.doleft.set_from_pixbuf(left) # displaying
 				self.doright.set_from_pixbuf(right) # displaying
 				location = self.window.get_position()
@@ -544,15 +572,15 @@ class GUI:
 	
 	def modify_image(self, force=0, normale=0): # Affichage d'une image (modification)
 		maxh, maxw = self.max_img_height*(1 + self.zoom_percent), self.max_img_width*(1 + self.zoom_percent)
-		self.stereoIMG.make_stereo(maxh, maxw, self.vergence, self.conf['mode'], force, normale)
+		
+		get 	= self.img.make()
 		print "Modification: Vergence=",self.vergence ," Mode=",self.conf['mode'], "Zoom=", self.zoom_percent
 		if self.conf['mode'] != "DUALOUTPUT":
-			pixbuf = self.image_to_pixbuf( self.stereoIMG.get_image() )
+			pixbuf = self.image_to_pixbuf( get )
 			self.stereo.set_from_pixbuf(pixbuf) # Affichage
 		else:
-			images = self.stereoIMG.get_images()
-			left = self.image_to_pixbuf( images[0] )
-			right = self.image_to_pixbuf( images[1] )
+			left = self.image_to_pixbuf( get[0] )
+			right = self.image_to_pixbuf( get[1] )
 			self.doleft.set_from_pixbuf(left) # displaying
 			self.doright.set_from_pixbuf(right) # displaying
 			location = self.window.get_position()
