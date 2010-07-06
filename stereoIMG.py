@@ -1,12 +1,6 @@
 #!/usr/bin/python
 # -*- coding:utf-8 -*-
 
-#
-# Module de transformation 3D
-# JPS -> Interlaced
-# JPS -> Anaglyph
-#
-
 import Image
 import string, binascii, StringIO, math
 
@@ -21,6 +15,7 @@ class stereoIMG:
 		pixbuf = loader.get_pixbuf()
 		loader.close()
 		return pixbuf
+	
 	#
 	# Fonction d'aquisition d'une source stereo (2 vues en une image)
 	#
@@ -34,13 +29,13 @@ class stereoIMG:
 			# On va séparer les couleurs de l'image anaglyphe.
 			# La composante rouge formera la vue droite, alors que le cyan (vert+bleu) formera la gauche.
 			
-			anaglype 	= Image.open(src)
+			anaglyphe 	= Image.open(src)
 			self.ana 	= True
-			taille 		= anaglype.size
+			taille 		= anaglyphe.size
 			self.height, self.width = taille[1], taille[0]
 			
 			alpha 		= Image.new('L', (self.width,self.height)) # needed
-			r, v, b 		= anaglype.split()
+			r, v, b 		= anaglyphe.split()
 			
 			# Gauche
 			source 		= [alpha, v, b]		
@@ -119,12 +114,6 @@ class stereoIMG:
 		else:
 			return False
 
-	def swap_eyes(self):
-		self.tempimg 	= self.left
-		self.left 		= self.right
-		self.right 		= self.tempimg
-		self.tempimg 	= ''
-
 	#
 	# Fonction de lancement de la creation d'une image stereoscopique
 	#
@@ -167,24 +156,13 @@ class stereoIMG:
 		#	self.resize_image(maxwidth,maxheight)
 		
 		#rendering = self.get_mode()
-		
-		if mode == "INTERLACED":
-			rep = self.make_interlaced(decallage)
-			return rep # True or False
-		elif mode == "ANAGLYPH":
-			rep = self.make_anaglyph(decallage)
-			return rep # True or False
-		elif mode == "HSYNC":
+
+		if mode == "HSYNC":
 			rep = self.make_leftright(decallage)
 			return rep
 		elif mode == "VSYNC":
 			rep = self.make_topbottom(decallage)
 			return rep
-		elif mode == "CHECKERBOARD":
-			rep = self.make_checkerboard(decallage)
-			return rep
-		elif mode == "DUALOUTPUT":
-			return True
 		else:
 			print "Aucun mode de rendu"
 			return False

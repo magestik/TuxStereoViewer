@@ -115,7 +115,7 @@
                         <property name="label" translatable="yes">Interlaced</property>
                         <property name="use_underline">True</property>
                         <property name="draw_as_radio">True</property>
-                        <signal name="toggled" handler="switch2inter"/>
+                        <signal name="toggled" handler="onModeClick"/>
                       </object>
                     </child>
                     <child>
@@ -124,7 +124,7 @@
                         <property name="label" translatable="yes">Anaglyph</property>
                         <property name="use_underline">True</property>
                         <property name="draw_as_radio">True</property>
-                        <signal name="toggled" handler="switch2ana"/>
+                        <signal name="toggled" handler="onModeClick"/>
                       </object>
                     </child>
                     <child>
@@ -133,7 +133,7 @@
                         <property name="label" translatable="yes">Dual Output</property>
                         <property name="use_underline">True</property>
                         <property name="draw_as_radio">True</property>
-                        <signal name="toggled" handler="switch2dualoutput"/>
+                        <signal name="toggled" handler="onModeClick"/>
                       </object>
                     </child>
                     <child>
@@ -142,7 +142,7 @@
                         <property name="label" translatable="yes">Shutters</property>
                         <property name="use_underline">True</property>
                         <property name="draw_as_radio">True</property>
-                        <signal name="toggled" handler="switch2shutters"/>
+                        <signal name="toggled" handler="onModeClick"/>
                       </object>
                     </child>
                     <child>
@@ -151,7 +151,7 @@
                         <property name="label" translatable="yes">Checkerboard</property>
                         <property name="use_underline">True</property>
                         <property name="draw_as_radio">True</property>
-                        <signal name="toggled" handler="switch2checkerboard"/>
+                        <signal name="toggled" handler="onModeClick"/>
                       </object>
                     </child>
                     <child>
@@ -160,7 +160,6 @@
                         <property name="label" translatable="yes">Top/Bottom</property>
                         <property name="use_underline">True</property>
                         <property name="draw_as_radio">True</property>
-                        <signal name="toggled" handler="switch2topbottom"/>
                       </object>
                     </child>
                     <child>
@@ -169,7 +168,6 @@
                         <property name="label" translatable="yes">Left/Right</property>
                         <property name="use_underline">True</property>
                         <property name="draw_as_radio">True</property>
-                        <signal name="toggled" handler="switch2leftright"/>
                       </object>
                     </child>
                     <child>
@@ -180,19 +178,19 @@
                     <child>
                       <object class="GtkCheckMenuItem" id="right_eye_menu">
                         <property name="visible">True</property>
-                        <property name="label" translatable="yes">Right Eye</property>
+                        <property name="label" translatable="yes">Right</property>
                         <property name="use_underline">True</property>
                         <property name="draw_as_radio">True</property>
-                        <signal name="toggled" handler="switch2right"/>
+                        <signal name="toggled" handler="onEyeClick"/>
                       </object>
                     </child>
                     <child>
                       <object class="GtkCheckMenuItem" id="left_eye_menu">
                         <property name="visible">True</property>
-                        <property name="label" translatable="yes">Left Eye</property>
+                        <property name="label" translatable="yes">Left</property>
                         <property name="use_underline">True</property>
                         <property name="draw_as_radio">True</property>
-                        <signal name="toggled" handler="switch2left"/>
+                        <signal name="toggled" handler="onEyeClick"/>
                       </object>
                     </child>
                     <child>
@@ -262,7 +260,7 @@
                 <property name="label" translatable="yes">unzoom</property>
                 <property name="use_underline">True</property>
                 <property name="stock_id">gtk-zoom-out</property>
-                <signal name="clicked" handler="size"/>
+                <signal name="clicked" handler="onSizeClick"/>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -275,7 +273,7 @@
                 <property name="label" translatable="yes">normale</property>
                 <property name="use_underline">True</property>
                 <property name="stock_id">gtk-zoom-100</property>
-                <signal name="clicked" handler="size"/>
+                <signal name="clicked" handler="onSizeClick"/>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -288,7 +286,7 @@
                 <property name="label" translatable="yes">scale</property>
                 <property name="use_underline">True</property>
                 <property name="stock_id">gtk-zoom-fit</property>
-                <signal name="clicked" handler="size"/>
+                <signal name="clicked" handler="onSizeClick"/>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -302,7 +300,7 @@
                 <property name="label" translatable="yes">zoom</property>
                 <property name="use_underline">True</property>
                 <property name="stock_id">gtk-zoom-in</property>
-                <signal name="clicked" handler="size"/>
+                <signal name="clicked" handler="onSizeClick"/>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -325,7 +323,7 @@
                 <property name="label" translatable="yes">toolbutton</property>
                 <property name="use_underline">True</property>
                 <property name="stock_id">gtk-goto-first</property>
-                <signal name="clicked" handler="change"/>
+                <signal name="clicked" handler="onImageMove"/>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -353,7 +351,7 @@
                 <property name="label" translatable="yes">&gt;&gt;</property>
                 <property name="use_underline">True</property>
                 <property name="stock_id">gtk-goto-last</property>
-                <signal name="clicked" handler="change"/>
+                <signal name="clicked" handler="onImageMove"/>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -373,10 +371,10 @@
               <object class="GtkToolButton" id="swapeyes">
                 <property name="visible">True</property>
                 <property name="is_important">True</property>
-                <property name="label" translatable="yes">o</property>
+                <property name="label" translatable="yes">change</property>
                 <property name="use_underline">True</property>
                 <property name="stock_id">gtk-refresh</property>
-                <signal name="clicked" handler="swap_eyes_button"/>
+                <signal name="clicked" handler="onEyeClick"/>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -396,10 +394,10 @@
               <object class="GtkToolButton" id="decrease">
                 <property name="visible">True</property>
                 <property name="is_important">True</property>
-                <property name="label" translatable="yes">o</property>
+                <property name="label" translatable="yes">h-</property>
                 <property name="use_underline">True</property>
                 <property name="stock_id">gtk-justify-left</property>
-                <signal name="clicked" handler="decrease"/>
+                <signal name="clicked" handler="onSeperationClick"/>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -409,10 +407,10 @@
             <child>
               <object class="GtkToolButton" id="reset_x">
                 <property name="visible">True</property>
-                <property name="label" translatable="yes">&lt;-&gt;</property>
+                <property name="label" translatable="yes">h0</property>
                 <property name="use_underline">True</property>
                 <property name="stock_id">gtk-justify-fill</property>
-                <signal name="clicked" handler="reset_x"/>
+                <signal name="clicked" handler="onSeperationClick"/>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -422,10 +420,10 @@
             <child>
               <object class="GtkToolButton" id="increase">
                 <property name="visible">True</property>
-                <property name="label" translatable="yes">toolbutton9</property>
+                <property name="label" translatable="yes">h+</property>
                 <property name="use_underline">True</property>
                 <property name="stock_id">gtk-justify-right</property>
-                <signal name="clicked" handler="increase"/>
+                <signal name="clicked" handler="onSeperationClick"/>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -444,10 +442,10 @@
             <child>
               <object class="GtkToolButton" id="increaseV">
                 <property name="visible">True</property>
-                <property name="label" translatable="yes">toolbutton9</property>
+                <property name="label" translatable="yes">v+</property>
                 <property name="use_underline">True</property>
                 <property name="stock_id">gtk-go-up</property>
-                <signal name="clicked" handler="increaseVsep"/>
+                <signal name="clicked" handler="onSeperationClick"/>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -457,10 +455,10 @@
             <child>
               <object class="GtkToolButton" id="decreaseV">
                 <property name="visible">True</property>
-                <property name="label" translatable="yes">toolbutton9</property>
+                <property name="label" translatable="yes">v-</property>
                 <property name="use_underline">True</property>
                 <property name="stock_id">gtk-go-down</property>
-                <signal name="clicked" handler="decreaseVsep"/>
+                <signal name="clicked" handler="onSeperationClick"/>
               </object>
               <packing>
                 <property name="expand">False</property>

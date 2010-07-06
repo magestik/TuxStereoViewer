@@ -3,15 +3,18 @@
 
 import stereoIMG
 import Image
+import math
 
 class CheckerBoard:
 	"Checkerboard support class"
 	
 	def __init__(self):
 		self.image 				= stereoIMG.stereoIMG()
-		self.vergence			= 0
+		self.vergence			= 0 # Horizontal separation
+		self.vsep				= 0 # Vertical separation
 		self.hardware 			= '' 
 		self.mode 				= ''
+		self.left = self.right = '' # Right and left Images
 	
 	def __del__(self):
 		print "del checkerboard"
@@ -25,8 +28,19 @@ class CheckerBoard:
 		except:
 			print "Image doesn't exist !"
 	
+	def open2(self, path='None', image='None'):
+		 if path != 'None':
+		 	self.image.set_sources_from_images(path[0], path[1])
+		 elif image[0] != '':
+		 	self.left, self.right 	= image[0], image[1]
+			self.oleft, self.oright = image[0], image[1] # Back-up
+			taille = self.right.size
+			self.height, self.width = taille[1], taille[0]
+
 	def make(self, decallage):
-		self.stereo = Image.new('RGB', (self.width, self.height))
+		width 		= self.width + math.fabs(self.vergence)
+		height 		= self.height + math.fabs(self.vsep)
+		self.stereo = Image.new('RGB', (width,height)) # Final image
 		
 		leftpix = self.left.getdata()
 		rightpix = self.right.getdata()
@@ -44,3 +58,6 @@ class CheckerBoard:
 		self.stereo.putdata(destpix) 	
 		
 		return self.stereo
+		
+	def swap_eyes(self):
+		self.left, self.right = self.right, self.left
