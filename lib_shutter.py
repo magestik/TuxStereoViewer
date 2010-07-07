@@ -21,7 +21,7 @@ class Shutter:
 		# exec("Genlock --off")
 		print "del shutter"
 	
-	def open(self, path, anaglyph):
+	def open(self, path, anaglyph=False):
 		try:
 			self.left, self.right 	= self.image.set_sources_from_stereo(path, anaglyph)
 			self.oleft, self.oright = self.left, self.right # Back-up
@@ -39,20 +39,28 @@ class Shutter:
 			taille = self.right.size
 			self.height, self.width = taille[1], taille[0]
 
-	def make(self, size):
+	def make(self):
 		# exec("Genlock --on")
 		return [self.left, self.right]
 	
 	def swap_eyes(self):
 		self.left, self.right = self.right, self.left
 	
-	def resize(self, maxw, maxh):
-		try:
+	def resize(self, maxw, maxh, force=0, normal=0):
+		if normal == 1: # Scale 1:1
 			self.right, self.left 	= self.oright, self.oleft  # Backup
-			self.right, self.left 	= self.right.resize((maxw, maxh), Image.ANTIALIAS), self.left.resize((maxw, maxh), Image.ANTIALIAS)
-			self.height, self.width = maxh, maxw
-		except:
-			"bug"
+			taille = self.right.size
+			self.height, self.width = taille[1], taille[0]
+		
+		elif self.height > 0 and self.width > 0:
+			if self.height > maxh or self.width > maxw or force == 1:
+				qrh, qrw			= (self.height + 0.00000000) / maxh, (self.width + 0.00000000) / maxw
+				qrmax 			= max(qrh, qrw)
+				height, width 	= int(math.ceil(self.height / qrmax)), int(math.ceil(self.width / qrmax))
+				
+				self.right, self.left 	= self.oright, self.oleft  # Backup
+				self.right, self.left 	= self.right.resize((width, height), Image.ANTIALIAS), self.left.resize((width, height), Image.ANTIALIAS)
+				self.height, self.width = height, width
 
 	def SpecialHardware(self, go='on'): # Special Hardware actvation
 		if go == 'on':

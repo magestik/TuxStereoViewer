@@ -22,7 +22,7 @@ class Interlaced:
 		self.SpecialHardware("off")
 		print "del int"
 
-	def open(self, path, anaglyph): # TODO Open Anaglyph doesn't work anymore
+	def open(self, path, anaglyph=False): # TODO Open Anaglyph doesn't work anymore
 		try:
 			self.left, self.right 	= self.image.set_sources_from_stereo(path, anaglyph)
 			self.oleft, self.oright = self.left, self.right # Back-up
@@ -40,7 +40,7 @@ class Interlaced:
 			taille = self.right.size
 			self.height, self.width = taille[1], taille[0]
 			
-	def make(self, size):
+	def make(self):
 		width 		= self.width + math.fabs(self.vergence)
 		height 		= self.height + math.fabs(self.vsep)
 		self.stereo = Image.new('RGB', (width,height)) # Final image
@@ -66,18 +66,21 @@ class Interlaced:
 	def swap_eyes(self):
 		self.left, self.right = self.right, self.left
 	
-	def resize(self, maxw, maxh):
-		if self.height > 0 and self.width > 0:
-			if self.height > maxh or self.width > maxw:
-				qrh, qrw			= round(self.height / maxh, 6), round(self.width / maxw, 6)
+	def resize(self, maxw, maxh, force=0, normal=0):
+		if normal == 1: # Scale 1:1
+			self.right, self.left 	= self.oright, self.oleft  # Backup
+			taille = self.right.size
+			self.height, self.width = taille[1], taille[0]
+		
+		elif self.height > 0 and self.width > 0:
+			if self.height > maxh or self.width > maxw or force == 1:
+				qrh, qrw			= (self.height + 0.00000000) / maxh, (self.width + 0.00000000) / maxw
 				qrmax 			= max(qrh, qrw)
-				height, width 	= math.ceil(self.height / qrmax), math.ceil(self.width / qrmax)
+				height, width 	= int(math.ceil(self.height / qrmax)), int(math.ceil(self.width / qrmax))
 				
 				self.right, self.left 	= self.oright, self.oleft  # Backup
 				self.right, self.left 	= self.right.resize((width, height), Image.ANTIALIAS), self.left.resize((width, height), Image.ANTIALIAS)
 				self.height, self.width = height, width
-			else:
-				print "resize is no longer needed"
 				
 	def SpecialHardware(self, go='on'): # Special Hardware actvation
 		if go == 'on':

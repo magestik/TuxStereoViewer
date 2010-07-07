@@ -193,19 +193,6 @@
                         <signal name="toggled" handler="onEyeClick"/>
                       </object>
                     </child>
-                    <child>
-                      <object class="GtkSeparatorMenuItem" id="menuitem6">
-                        <property name="visible">True</property>
-                      </object>
-                    </child>
-                    <child>
-                      <object class="GtkCheckMenuItem" id="dongle_menu">
-                        <property name="visible">True</property>
-                        <property name="label" translatable="yes">Use E-Dim Dongle</property>
-                        <property name="use_underline">True</property>
-                        <property name="active">True</property>
-                      </object>
-                    </child>
                   </object>
                 </child>
               </object>
@@ -242,6 +229,7 @@
             <property name="width_request">1000</property>
             <property name="visible">True</property>
             <property name="stock">gtk-missing-image</property>
+            <signal name="size_allocate" handler="onSizeAllocate"/>
           </object>
           <packing>
             <property name="position">1</property>

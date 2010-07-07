@@ -8,20 +8,14 @@ try:
 except:
 	print "Psyco isn't installed."
 
-# == Utilisation de GTK pour la GUI
 import pygtk
 pygtk.require('2.0')
 import gtk
 
-# == Module a importer
-import stereoIMG 		# Import du module de transformation en S-3D
-import StringIO		# Conversion PIL -> Pixbuf
-import sys, os, glob, getopt, time
-import string
+import StringIO, sys, os, glob, getopt, time, string
 
-# == Interface
 class GUI:	
-	def main(self): # Boucle principale
+	def main(self): # Main loop
 		gtk.main()
 		return 0
 	
@@ -36,7 +30,8 @@ class GUI:
 		
 		self.window.connect("destroy", self.destroy)
 		self.window.connect("delete_event", self.delete_event)
-
+		
+		self.max_height = self.max_width = 0
 		self.src_info			= os.path.split(fopen)
 		self.window_mode 		= 0 # 1 = Fullscren ; 0 = Windowed
 		self.zoom_percent		= 0 # Zoom (in %)
@@ -57,38 +52,31 @@ class GUI:
 		self.dualoutput_window 		= self.interface.get_object("dualoutputWindow")
 		
 		# - Switching menus
-		self.re_menu 	= self.interface.get_object("right_eye_menu")
-		self.le_menu 	= self.interface.get_object("left_eye_menu")
+		self.re_menu 		= self.interface.get_object("right_eye_menu")
+		self.le_menu 		= self.interface.get_object("left_eye_menu")
 
-		self.imode_menu		= self.interface.get_object("inter_mode_menu")
-		self.domode_menu		= self.interface.get_object("dualout_mode_menu")
-		self.amode_menu		= self.interface.get_object("ana_mode_menu")
-		self.smode_menu		= self.interface.get_object("shutter_mode_menu")
-		self.checkerboard_menu 	= self.interface.get_object("checkerboard_menu")
+		self.imode_menu	= self.interface.get_object("inter_mode_menu")
+		self.domode_menu	= self.interface.get_object("dualout_mode_menu")
+		self.amode_menu	= self.interface.get_object("ana_mode_menu")
+		self.smode_menu	= self.interface.get_object("shutter_mode_menu")
+		self.cbmode_menu	= self.interface.get_object("checkerboard_menu")
 		# self.tbmode_menu	= self.interface.get_object("top_bottom_menu")
 		# self.lrmode_menu	= self.interface.get_object("left_right_menu")
-
-		# # eDimensional
-		self.dongle_menu 		= self.interface.get_object("dongle_menu")
-		if self.conf['type'] == "eDimensional":
-			self.dongle_menu.set_active(True)
-			if self.conf['mode'] == "INTERLACED":
-				self.interlace_flash() 
-			elif self.conf['mode'] == "VSYNC":
-				self.vsync_flash()
-		else:
-			self.dongle_menu.set_active(False)
 		
 		self.set_mode( self.conf['mode'] )
 		self.set_eye( self.conf['eye'] )
 
 		self.interface.connect_signals(self)
 		self.window.show()
-
-		self.stereoIMG = stereoIMG.stereoIMG()
-		self.stereoIMG.vsep = 0
-		self.display_image(fopen)
-
+		
+		if fopen != "None":
+			self.img.open(fopen)
+			self.modify_image()
+		
+	def onSizeAllocate(self, win, alloc):
+		self.max_height 	= alloc[3] - alloc[1]
+		self.max_width 	= alloc[2] - alloc[0]
+		
 	#
 	# # Configurations functions
 	#	
@@ -98,22 +86,20 @@ class GUI:
 		name 	= 'general.conf'
 		path =  home + dir + name
 		file = ''
+		for key in self.conf:
+			file = file + key + ' = ' + self.conf[key] + '\n'
+
 		try:
-			conf = open(path)
-			for line in conf.readlines():
-				if line.find('=') > 0:
-					key, value = line[0:].split(" = ",2)
-					file = file + key + ' = ' + self.conf[key] + '\n'
-				else:
-					file = file + line
+			if not os.path.exists(home + dir):
+				os.mkdir(home + dir)
+				print "creating configuration files directory"
+			
+			conf = open(path, 'w')
+			conf.write(file)
 			conf.close()
 		except:
 			print "Error while saving config file !"
-		
-		conf = open(path, 'w')
-		conf.write(file)
-		conf.close()
-		
+
 	def getConfig(self):
 		home 	= os.path.expanduser("~")
 		dir   = '/.stereo3D/'
@@ -202,7 +188,9 @@ class GUI:
 			fopen 			= dialog.get_filename()
 			self.vergence 	= 0 # reset decallage
 			self.src_info 	= os.path.split(fopen)
-			self.display_image(fopen)
+			
+			self.img.open(fopen)
+			self.modify_image()
 		elif response == gtk.RESPONSE_CANCEL:
 			print 'File selection aborted'
 		dialog.destroy()
@@ -230,7 +218,9 @@ class GUI:
 			fopen 			= dialog.get_filename()
 			self.vergence 	= 0 # reset decallage
 			self.src_info 	= os.path.split(fopen)
-			self.display_image(fopen, True)
+			
+			self.img.open(fopen, True)
+			self.modify_image()
 		elif response == gtk.RESPONSE_CANCEL:
 			print 'File selection aborted'
 		dialog.destroy()
@@ -257,13 +247,13 @@ class GUI:
 			self.modify_image()
 		elif button.get_label() == 'zoom':
 			self.zoom_percent += 0.1
-			self.modify_image()
+			self.modify_image(1)
 		elif button.get_label() == 'scale':
-			self.zoom_percent += 0.1
-			self.modify_image()
+			self.zoom_percent = 0
+			self.modify_image(1)
 		elif button.get_label() == 'normale':
 			self.zoom_percent = 0
-			self.modify_image(0,1)
+			self.modify_image(1,1)
 
 	def onImageMove(self, button): # Next/Previous image in the directory
 		if button.get_label() == '>>':
@@ -351,12 +341,10 @@ class GUI:
 	# # Functions about Rendering Mode
 	#
 	def set_mode(self, mode):
-		if self.lib != False:
-			self.img.__del__() # Delete the class
+		try:
 			temp_left, temp_right = self.img.left, self.img.right
-		else:
-			self.lib = True
-			temp_left = temp_right = ''
+		except: # lib is not imported yet
+			temp_left, temp_right = '', ''
 		
 		if mode == "INTERLACED":
 			import lib_interlaced
@@ -397,7 +385,7 @@ class GUI:
 		self.imode_menu.set_active(int) # Interlaced
 		self.smode_menu.set_active(shu) # Shutters
 		self.domode_menu.set_active(dout) # Dual Out
-		self.checkerboard_menu.set_active(che) # Checkerboard
+		self.cbmode_menu.set_active(che) # Checkerboard
 
 	def onModeClick(self, button):
 		if self.flag == False:
@@ -424,12 +412,11 @@ class GUI:
 	# print self.window.set_screen(gtk.gdk.screen_get_default())
 	# gdk.screen_width(), gdk.screen_height()
 	
-	def modify_image(self, force=0, normale=0): # Redisplaying the image including changes (size, vergence ...)
-		size = {}
-		size[0], size[1] = self.stereo.allocation.height*(1 + self.zoom_percent), self.stereo.allocation.width*(1 + self.zoom_percent)
-		self.img.resize(self.stereo.allocation.width, self.stereo.allocation.height)
-		get 	= self.img.make(size)
-
+	def modify_image(self, force=0, normale=0): # Redisplaying the image including changes (size, vergence ...) 
+		self.img.resize(self.max_width*(1 + self.zoom_percent), self.max_height*(1 + self.zoom_percent), force, normale)
+		
+		get 	= self.img.make()
+		
 		if self.conf['mode'] != "DUAL OUTPUT" and self.conf['mode'] != "SHUTTERS":
 			pixbuf = self.image_to_pixbuf( get )
 			self.stereo.set_from_pixbuf(pixbuf) # Affichage
