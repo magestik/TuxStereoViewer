@@ -8,11 +8,13 @@ class Shutter:
 	
 	def __init__(self):
 		self.image 				= stereoIMG.stereoIMG()
-		self.vergence			= 0 # Horizontal separation
-		self.vsep				= 0 # Vertical separation
+		self.vergence			= 0  # Horizontal separation
+		self.vsep				= 0  # Vertical separation
 		self.hardware 			= '' # eDim, nvidia 3D Vision ...
 		self.mode 				= 'left/right'
-		self.left = self.right = '' # Right and left Images
+		self.left 	= self.right = '' # Right and left Images
+		self.height = self.width = 0  # Height and Width
+		self.SpecialHardware("off")
 		
 	def __del__(self):
 		self.SpecialHardware("off") # Shut Down Special Hardware
@@ -38,13 +40,20 @@ class Shutter:
 			self.height, self.width = taille[1], taille[0]
 
 	def make(self, size):
-		self.SpecialHardware()
 		# exec("Genlock --on")
 		return [self.left, self.right]
 	
 	def swap_eyes(self):
 		self.left, self.right = self.right, self.left
-		
+	
+	def resize(self, maxw, maxh):
+		try:
+			self.right, self.left 	= self.oright, self.oleft  # Backup
+			self.right, self.left 	= self.right.resize((maxw, maxh), Image.ANTIALIAS), self.left.resize((maxw, maxh), Image.ANTIALIAS)
+			self.height, self.width = maxh, maxw
+		except:
+			"bug"
+
 	def SpecialHardware(self, go='on'): # Special Hardware actvation
 		if go == 'on':
 			if self.hardware == 'eDimensionnal':

@@ -482,7 +482,7 @@
     <property name="type_hint">normal</property>
     <property name="has_separator">False</property>
     <property name="program_name">Tux Stereo Viewer</property>
-    <property name="version">v0.1</property>
+    <property name="version">v0.2</property>
     <property name="copyright" translatable="yes">Magestik &#xA9; 2010</property>
     <property name="comments" translatable="yes">Entrez dans le monde de la S-3D</property>
     <property name="authors">Magestik aka GG</property>
@@ -614,51 +614,6 @@
       <action-widget response="0">button1</action-widget>
       <action-widget response="1">button2</action-widget>
     </action-widgets>
-  </object>
-  <object class="GtkWindow" id="InterlacedOnWindow">
-    <child>
-      <object class="GtkImage" id="image1">
-        <property name="visible">True</property>
-        <property name="yalign">0</property>
-        <property name="pixbuf">eDimensional/interleavednormalon.gif</property>
-      </object>
-    </child>
-  </object>
-  <object class="GtkWindow" id="OffWindow">
-    <child>
-      <object class="GtkImage" id="image2">
-        <property name="visible">True</property>
-        <property name="yalign">0</property>
-        <property name="pixbuf">eDimensional/off.gif</property>
-      </object>
-    </child>
-  </object>
-  <object class="GtkWindow" id="InterlacedReverseWindow">
-    <child>
-      <object class="GtkImage" id="image3">
-        <property name="visible">True</property>
-        <property name="yalign">0</property>
-        <property name="pixbuf">eDimensional/interleavedreverseon.gif</property>
-      </object>
-    </child>
-  </object>
-  <object class="GtkWindow" id="PageFlipWindow">
-    <child>
-      <object class="GtkImage" id="image4">
-        <property name="visible">True</property>
-        <property name="yalign">0</property>
-        <property name="pixbuf">eDimensional/pageflipon.gif</property>
-      </object>
-    </child>
-  </object>
-  <object class="GtkWindow" id="SyncDoublingWindow">
-    <child>
-      <object class="GtkImage" id="image5">
-        <property name="visible">True</property>
-        <property name="yalign">0</property>
-        <property name="pixbuf">eDimensional/vsyncdoublingon.gif</property>
-      </object>
-    </child>
   </object>
   <object class="GtkWindow" id="dualoutputWindow">
     <child>

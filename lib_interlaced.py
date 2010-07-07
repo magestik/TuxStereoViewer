@@ -13,17 +13,18 @@ class Interlaced:
 		self.vergence			= 0 # Horizontal separation
 		self.vsep				= 0 # Vertical separation
 		self.hardware 			= '' # Zalman, iZ3D ...
-		self.mode 				= 'h1' # Horizontal 1 ; TODO hx and Vertical interlacement...
-		self.left = self.right = '' # Right and left Images
-		
+		self.mode 				= 'h1' # Horizontal Interlacement from 1 px
+		self.left 	= self.right = ''
+		self.height = self.width = 0
+		self.SpecialHardware("on")
+
 	def __del__(self):
-		self.SpecialHardware("off") # Shut Down Special Hardware
+		self.SpecialHardware("off")
 		print "del int"
 
-	def open(self, path, anaglyph):
-		self.left, self.right 	= self.image.set_sources_from_stereo(path, anaglyph)
+	def open(self, path, anaglyph): # TODO Open Anaglyph doesn't work anymore
 		try:
-			
+			self.left, self.right 	= self.image.set_sources_from_stereo(path, anaglyph)
 			self.oleft, self.oright = self.left, self.right # Back-up
 			size = self.left.size
 			self.height, self.width = size[1], size[0]
@@ -48,8 +49,6 @@ class Interlaced:
 		while i < self.height:
 			self.copyPaste(i, self.vergence)
 			i = i + 1
-
-		self.SpecialHardware()
 		return self.stereo
 	
 	def copyPaste(self, row, decallage):	
@@ -66,7 +65,20 @@ class Interlaced:
 	
 	def swap_eyes(self):
 		self.left, self.right = self.right, self.left
-		
+	
+	def resize(self, maxw, maxh):
+		if self.height > 0 and self.width > 0:
+			if self.height > maxh or self.width > maxw:
+				qrh, qrw			= round(self.height / maxh, 6), round(self.width / maxw, 6)
+				qrmax 			= max(qrh, qrw)
+				height, width 	= math.ceil(self.height / qrmax), math.ceil(self.width / qrmax)
+				
+				self.right, self.left 	= self.oright, self.oleft  # Backup
+				self.right, self.left 	= self.right.resize((width, height), Image.ANTIALIAS), self.left.resize((width, height), Image.ANTIALIAS)
+				self.height, self.width = height, width
+			else:
+				print "resize is no longer needed"
+				
 	def SpecialHardware(self, go='on'): # Special Hardware actvation
 		if go == 'on':
 			if self.hardware == 'eDimensionnal':

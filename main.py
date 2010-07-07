@@ -30,9 +30,9 @@ class GUI:
 		self.interface.add_from_file(sys.path[0] + '/interface-v0.3.glade')
 
 		self.window = self.interface.get_object("main")
-		self.window.set_title("Tux stereo Viewer")					# Nom de la fenetre
-		self.window.set_icon( gtk.gdk.pixbuf_new_from_file('/usr/share/pixmaps/TuxStereoViewer-icon.png') ) # Thx H4X0R666 for the icon
-		self.window.maximize()												# Maximiser la fenetre
+		self.window.set_title("Tux stereo Viewer")
+		self.window.set_icon( gtk.gdk.pixbuf_new_from_file('/usr/share/pixmaps/TuxStereoViewer-icon.png') )
+		self.window.maximize()
 		
 		self.window.connect("destroy", self.destroy)
 		self.window.connect("delete_event", self.delete_event)
@@ -45,6 +45,8 @@ class GUI:
 		self.lib 				= False
 		self.getConfig()
 		
+		self.stereo = self.interface.get_object("stereo") # Where goes the image
+		
 		# - Menus
 		self.about_dialog 	= self.interface.get_object("about")
 		self.options_dialog 	= self.interface.get_object("options")
@@ -52,14 +54,12 @@ class GUI:
 		# - Dual Output
 		self.doright 					= self.interface.get_object("do-right")
 		self.doleft 					= self.interface.get_object("do-left")
-		self.dualoutput_window 		= self.interface.get_object("dualoutputWindow")			# Window for displaying two images
+		self.dualoutput_window 		= self.interface.get_object("dualoutputWindow")
 		
 		# - Switching menus
-		# # Eyes
 		self.re_menu 	= self.interface.get_object("right_eye_menu")
 		self.le_menu 	= self.interface.get_object("left_eye_menu")
-		
-		# # Stereo Mode
+
 		self.imode_menu		= self.interface.get_object("inter_mode_menu")
 		self.domode_menu		= self.interface.get_object("dualout_mode_menu")
 		self.amode_menu		= self.interface.get_object("ana_mode_menu")
@@ -67,11 +67,6 @@ class GUI:
 		self.checkerboard_menu 	= self.interface.get_object("checkerboard_menu")
 		# self.tbmode_menu	= self.interface.get_object("top_bottom_menu")
 		# self.lrmode_menu	= self.interface.get_object("left_right_menu")
-		
-		if self.conf['eye'] == "LEFT":
-			self.le_menu.set_active(True)
-		else:
-			self.re_menu.set_active(True)
 
 		# # eDimensional
 		self.dongle_menu 		= self.interface.get_object("dongle_menu")
@@ -84,23 +79,16 @@ class GUI:
 		else:
 			self.dongle_menu.set_active(False)
 		
-		self.interface.connect_signals(self)
-		
-		# display = gtk.gdk.display_get_default()
-		# print display.get_name() -> :0:0
-
-		print self.window.set_screen(gtk.gdk.screen_get_default())
-		
 		self.set_mode( self.conf['mode'] )
-		
-		self.stereoIMG = stereoIMG.stereoIMG()
-		self.stereoIMG.vsep = 0
-		# - Displaying
-		self.stereo = self.interface.get_object("stereo")
+		self.set_eye( self.conf['eye'] )
+
+		self.interface.connect_signals(self)
 		self.window.show()
 
+		self.stereoIMG = stereoIMG.stereoIMG()
+		self.stereoIMG.vsep = 0
 		self.display_image(fopen)
-	
+
 	#
 	# # Configurations functions
 	#	
@@ -330,7 +318,7 @@ class GUI:
 			self.conf['eye'] = "RIGHT"
 				
 		self.img.swap_eyes()
-		self.modify_image() # refresh image
+
 		try:
 			self.modify_image() # refresh image
 		except:
@@ -429,33 +417,17 @@ class GUI:
 	def display_image(self, fopen="None", anaglyph=False): # Opening an image
 		if fopen != "None":
 			self.img.open(fopen, anaglyph) # anaglyph = True if the image is an anaglyph
+			self.modify_image()
 			
-			if self.re_menu.get_active() == True:
-				print "Swapping eyes"
-				self.img.image.swap_eyes()
-			else:
-				print "Not Swapping eyes"
-			
-			size = {}
-			size[0], size[1] = self.stereo.allocation.height, self.stereo.allocation.width
-			get 	= self.img.make(size)
-			
-			if self.conf['mode'] != "DUAL OUTPUT" and self.conf['mode'] != "SHUTTERS":
-				pixbuf = self.image_to_pixbuf( get )
-				self.stereo.set_from_pixbuf(pixbuf) # Affichage
-			else:
-				left = self.image_to_pixbuf( get[0] )
-				right = self.image_to_pixbuf( get[1] )
-				self.doleft.set_from_pixbuf(left) # displaying
-				self.doright.set_from_pixbuf(right) # displaying
-				location = self.window.get_position()
-				self.dualoutput_window.move(location[0],location[1])
-				self.dualoutput_window.fullscreen()
-				self.dualoutput_window.show()
+	# display = gtk.gdk.display_get_default()
+	# print display.get_name() -> :0:0
+	# print self.window.set_screen(gtk.gdk.screen_get_default())
+	# gdk.screen_width(), gdk.screen_height()
 	
 	def modify_image(self, force=0, normale=0): # Redisplaying the image including changes (size, vergence ...)
 		size = {}
 		size[0], size[1] = self.stereo.allocation.height*(1 + self.zoom_percent), self.stereo.allocation.width*(1 + self.zoom_percent)
+		self.img.resize(self.stereo.allocation.width, self.stereo.allocation.height)
 		get 	= self.img.make(size)
 
 		if self.conf['mode'] != "DUAL OUTPUT" and self.conf['mode'] != "SHUTTERS":

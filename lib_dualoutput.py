@@ -13,7 +13,9 @@ class DualOutput:
 		self.hardware 			= '' # planar, eDim, projectors ...
 		self.mode 				= 'left/right'
 		self.left = self.right = '' # Right and left Images
-	
+		self.height = self.width = 0 # Height and Width
+		self.SpecialHardware("on")
+		
 	def __del__(self):
 		self.SpecialHardware("off") # Shut Down Special Hardware
 		print "del dual"
@@ -41,6 +43,14 @@ class DualOutput:
 	
 	def swap_eyes(self):
 		self.left, self.right = self.right, self.left
+	
+	def resize(self, maxw, maxh):
+		try:
+			self.right, self.left 	= self.oright, self.oleft  # Backup
+			self.right, self.left 	= self.right.resize((maxw, maxh), Image.ANTIALIAS), self.left.resize((maxw, maxh), Image.ANTIALIAS)
+			self.height, self.width = maxh, maxw
+		except:
+			"bug"
 					
 	def SpecialHardware(self, go='on'): # Special Hardware actvation
 		if go == 'on':

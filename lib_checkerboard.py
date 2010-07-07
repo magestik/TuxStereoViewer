@@ -15,6 +15,7 @@ class CheckerBoard:
 		self.hardware 			= '' 
 		self.mode 				= ''
 		self.left = self.right = '' # Right and left Images
+		self.height = self.width = 0 # Height and Width
 	
 	def __del__(self):
 		print "del checkerboard"
@@ -58,6 +59,14 @@ class CheckerBoard:
 		self.stereo.putdata(destpix) 	
 		
 		return self.stereo
-		
+	
+	def resize(self, maxw, maxh):
+		try:
+			self.right, self.left 	= self.oright, self.oleft  # Backup
+			self.right, self.left 	= self.right.resize((maxw, maxh), Image.ANTIALIAS), self.left.resize((maxw, maxh), Image.ANTIALIAS)
+			self.height, self.width = maxh, maxw
+		except:
+			"bug"
+				
 	def swap_eyes(self):
 		self.left, self.right = self.right, self.left
