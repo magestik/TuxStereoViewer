@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding:utf-8 -*-
 
-import stereoIMG
+import functions
 import Image
 import math
 
@@ -9,20 +9,22 @@ class Anaglyph:
 	"Anaglyph support class"
 	
 	def __init__(self):
-		self.image 				= stereoIMG.stereoIMG()
 		self.vergence			= 0 # Horizontal separation
 		self.vsep				= 0 # Vertical separation
-		self.hardware 			= '' # Who cares ? :p
-		self.mode 				= 'green/purple'
-		self.left = self.right = '' # Right and left Images
+		self.left 	= self.right = '' # Right and left Images
 		self.height = self.width = 0 # Height and Width
+		
+		self.conf	= functions.getConfig(self, 'anaglyph')
+		if self.conf == 0: # default configuration
+			self.conf = {}
+			self.conf['type'] = 'red/cyan'
 	
 	def __del__(self):
-		print "del ana"
-	
+		functions.saveConfig(self, 'anaglyph', self.conf)
+
 	def open(self, path, anaglyph=False):
 		try:
-			self.left, self.right 	= self.image.set_sources_from_stereo(path, anaglyph)
+			self.left, self.right 	= functions.set_sources_from_stereo(self, path, anaglyph)
 			self.oleft, self.oright = self.left, self.right # Back-up
 			size = self.left.size
 			self.height, self.width = size[1], size[0]
@@ -31,7 +33,7 @@ class Anaglyph:
 	
 	def open2(self, path='None', image='None'):
 		 if path != 'None':
-		 	self.image.set_sources_from_images(path[0], path[1])
+		 	functions.set_sources_from_images(self, path[0], path[1])
 		 elif image[0] != '':
 		 	self.left, self.right 	= image[0], image[1]
 			self.oleft, self.oright = image[0], image[1] # Back-up
@@ -46,20 +48,17 @@ class Anaglyph:
 		rg, vg, bg	= self.left.split()
 		rd, vd, bd 	= self.right.split()
 
-		if self.mode == "red/cyan":
+		if self.conf['type'] == "red/cyan":
 			source = [rg, vd, bd]
-		elif self.mode == "green/purple":
-			source = [vg, bd, rd]
-		elif self.mode == "blue/yellow":
-			source = [bg, rd, vd]
-		elif self.mode == "cyan/red":
-			source = [vg, bg, rd]
-		elif self.mode == "purple/green":
-			source = [bg, rg, vd]
-		elif self.mode == "yellow/blue":
-			source = [rg, vg, bd]
+			print "red/cyan"
+		elif self.conf['type'] == "green/magenta":
+			source = [rd, vg, bd]
+			print "green/magenta"
+		elif self.conf['type'] == "blue/amber":
+			source = [rd, vd, bg]
+			print "blue/amber"
 		
-		# "R-V", "V-B", "B-R", "V-R", "B-V", "R-B"]
+		# "R-V", "V-B", "B-R", "V-R", "B-V", "R-B"
 
 		self.stereo = Image.merge("RGB", source)
 		return self.stereo

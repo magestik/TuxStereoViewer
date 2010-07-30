@@ -2,15 +2,13 @@
 <interface>
   <requires lib="gtk+" version="2.16"/>
   <!-- interface-naming-policy project-wide -->
-  <object class="GtkWindow" id="main">
+  <object class="GtkWindow" id="MainWin">
     <property name="width_request">780</property>
     <property name="height_request">550</property>
     <property name="default_width">780</property>
     <property name="default_height">550</property>
     <child>
       <object class="GtkVBox" id="vbox1">
-        <property name="width_request">1000</property>
-        <property name="height_request">820</property>
         <property name="visible">True</property>
         <child>
           <object class="GtkMenuBar" id="menubar">
@@ -42,7 +40,7 @@
                       </object>
                     </child>
                     <child>
-                      <object class="GtkMenuItem" id="open_ana">
+                      <object class="GtkMenuItem" id="separation5">
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">Open Anaglyph Image</property>
                         <property name="use_underline">True</property>
@@ -58,7 +56,7 @@
                       </object>
                     </child>
                     <child>
-                      <object class="GtkSeparatorMenuItem" id="separatormenuitem1">
+                      <object class="GtkSeparatorMenuItem" id="separation6">
                         <property name="visible">True</property>
                       </object>
                     </child>
@@ -232,13 +230,12 @@
             <signal name="size_allocate" handler="onSizeAllocate"/>
           </object>
           <packing>
-            <property name="position">1</property>
+            <property name="position">2</property>
           </packing>
         </child>
         <child>
-          <object class="GtkToolbar" id="toolbar1">
+          <object class="GtkToolbar" id="QuickChangeToolbar">
             <property name="width_request">1000</property>
-            <property name="height_request">36</property>
             <property name="visible">True</property>
             <property name="toolbar_style">icons</property>
             <child>
@@ -296,7 +293,7 @@
               </packing>
             </child>
             <child>
-              <object class="GtkSeparatorToolItem" id="toolbutton10">
+              <object class="GtkSeparatorToolItem" id="separation1">
                 <property name="visible">True</property>
               </object>
               <packing>
@@ -308,7 +305,7 @@
               <object class="GtkToolButton" id="back">
                 <property name="visible">True</property>
                 <property name="is_important">True</property>
-                <property name="label" translatable="yes">toolbutton</property>
+                <property name="label" translatable="yes">&lt;&lt;</property>
                 <property name="use_underline">True</property>
                 <property name="stock_id">gtk-goto-first</property>
                 <signal name="clicked" handler="onImageMove"/>
@@ -347,7 +344,7 @@
               </packing>
             </child>
             <child>
-              <object class="GtkSeparatorToolItem" id="toolbutton11">
+              <object class="GtkSeparatorToolItem" id="separation2">
                 <property name="visible">True</property>
               </object>
               <packing>
@@ -370,7 +367,7 @@
               </packing>
             </child>
             <child>
-              <object class="GtkSeparatorToolItem" id="toolbutton2">
+              <object class="GtkSeparatorToolItem" id="separation3">
                 <property name="visible">True</property>
               </object>
               <packing>
@@ -419,7 +416,7 @@
               </packing>
             </child>
             <child>
-              <object class="GtkSeparatorToolItem" id="toolbutton12">
+              <object class="GtkSeparatorToolItem" id="separation4">
                 <property name="visible">True</property>
               </object>
               <packing>
@@ -457,13 +454,13 @@
           <packing>
             <property name="expand">False</property>
             <property name="pack_type">end</property>
-            <property name="position">2</property>
+            <property name="position">1</property>
           </packing>
         </child>
       </object>
     </child>
   </object>
-  <object class="GtkAboutDialog" id="about">
+  <object class="GtkAboutDialog" id="AboutWin">
     <property name="border_width">5</property>
     <property name="window_position">center</property>
     <property name="destroy_with_parent">True</property>
@@ -498,7 +495,7 @@
       </object>
     </child>
   </object>
-  <object class="GtkDialog" id="options">
+  <object class="GtkDialog" id="OptionsWin">
     <property name="border_width">5</property>
     <property name="type_hint">normal</property>
     <property name="has_separator">False</property>
@@ -603,9 +600,12 @@
       <action-widget response="1">button2</action-widget>
     </action-widgets>
   </object>
-  <object class="GtkWindow" id="dualoutputWindow">
+  <object class="GtkWindow" id="H-DualOutWin">
+    <property name="resizable">False</property>
+    <property name="window_position">center</property>
+    <property name="skip_taskbar_hint">True</property>
     <child>
-      <object class="GtkHBox" id="hbox1">
+      <object class="GtkHBox" id="horizontal">
         <property name="visible">True</property>
         <child>
           <object class="GtkImage" id="do-left">
@@ -618,6 +618,34 @@
         </child>
         <child>
           <object class="GtkImage" id="do-right">
+            <property name="visible">True</property>
+            <property name="stock">gtk-missing-image</property>
+          </object>
+          <packing>
+            <property name="position">1</property>
+          </packing>
+        </child>
+      </object>
+    </child>
+  </object>
+  <object class="GtkWindow" id="V-DualOutWin">
+    <property name="resizable">False</property>
+    <property name="window_position">center</property>
+    <property name="skip_taskbar_hint">True</property>
+    <child>
+      <object class="GtkVBox" id="vbox2">
+        <property name="visible">True</property>
+        <child>
+          <object class="GtkImage" id="do-top">
+            <property name="visible">True</property>
+            <property name="stock">gtk-missing-image</property>
+          </object>
+          <packing>
+            <property name="position">0</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkImage" id="do-bottom">
             <property name="visible">True</property>
             <property name="stock">gtk-missing-image</property>
           </object>

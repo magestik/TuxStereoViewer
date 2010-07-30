@@ -4,15 +4,15 @@
 try:
 	import psyco
 	psyco.full();
-	print "Psyco is installed."
 except:
-	print "Psyco isn't installed."
+	print "You can install Psyco to improove the rendering speed"
 
 import pygtk
 pygtk.require('2.0')
 import gtk
 
-import StringIO, sys, os, glob, getopt, time, string
+import sys, os, glob, getopt, string
+import functions
 
 class GUI:	
 	def main(self): # Main loop
@@ -21,9 +21,9 @@ class GUI:
 	
 	def __init__(self, fopen):
 		self.interface = gtk.Builder()
-		self.interface.add_from_file(sys.path[0] + '/interface-v0.3.glade')
+		self.interface.add_from_file(sys.path[0] + '/interface-v0.4.glade')
 
-		self.window = self.interface.get_object("main")
+		self.window = self.interface.get_object("MainWin") # Main window
 		self.window.set_title("Tux stereo Viewer")
 		self.window.set_icon( gtk.gdk.pixbuf_new_from_file('/usr/share/pixmaps/TuxStereoViewer-icon.png') )
 		self.window.maximize()
@@ -31,27 +31,34 @@ class GUI:
 		self.window.connect("destroy", self.destroy)
 		self.window.connect("delete_event", self.delete_event)
 		
-		self.max_height = self.max_width = 0
+		self.max_height 		= self.max_width = 0
 		self.src_info			= os.path.split(fopen)
 		self.window_mode 		= 0 # 1 = Fullscren ; 0 = Windowed
 		self.zoom_percent		= 0 # Zoom (in %)
 		self.vergence 			= 0 # Vergence (in px)
 		self.flag 				= False
 		self.lib 				= False
-		self.getConfig()
 		
-		self.stereo = self.interface.get_object("stereo") # Where goes the image
+		self.conf				= functions.getConfig(self, 'main')
 		
-		# - Menus
-		self.about_dialog 	= self.interface.get_object("about")
-		self.options_dialog 	= self.interface.get_object("options")
+		self.stereo 		= self.interface.get_object("stereo") # Where we want to display the stereo image
+		self.status_bar 	= self.interface.get_object("statusBar")
 		
-		# - Dual Output
-		self.doright 					= self.interface.get_object("do-right")
-		self.doleft 					= self.interface.get_object("do-left")
-		self.dualoutput_window 		= self.interface.get_object("dualoutputWindow")
+		self.about_dialog 	= self.interface.get_object("AboutWin")
+		self.options_dialog 	= self.interface.get_object("OptionsWin")
+		#self.open_dialog 		= self.interface.get_object("OpenWin")
 		
-		# - Switching menus
+		# Dual Output Horizontal
+		self.doright 					= self.interface.get_object("do-right") 	# Right image for h dual output format
+		self.doleft 					= self.interface.get_object("do-left") 	# Left image for h dual output format
+		self.horizontal_window 		= self.interface.get_object("H-DualOutWin")
+		
+		# Dual Output Vertical
+		self.dotop 						= self.interface.get_object("do-top") 		# Top image for v dual output format
+		self.dobottom 					= self.interface.get_object("do-bottom") 	# Bottom image for v dual output format
+		self.vertical_window 		= self.interface.get_object("V-DualOutWin")
+		
+		# Quick configurations menus
 		self.re_menu 		= self.interface.get_object("right_eye_menu")
 		self.le_menu 		= self.interface.get_object("left_eye_menu")
 
@@ -76,49 +83,6 @@ class GUI:
 	def onSizeAllocate(self, win, alloc):
 		self.max_height 	= alloc[3] - alloc[1]
 		self.max_width 	= alloc[2] - alloc[0]
-		
-	#
-	# # Configurations functions
-	#	
-	def saveConfig(self):
-		home 	= os.path.expanduser("~")
-		dir   = '/.stereo3D/'
-		name 	= 'general.conf'
-		path =  home + dir + name
-		file = ''
-		for key in self.conf:
-			file = file + key + ' = ' + self.conf[key] + '\n'
-
-		try:
-			if not os.path.exists(home + dir):
-				os.mkdir(home + dir)
-				print "creating configuration files directory"
-			
-			conf = open(path, 'w')
-			conf.write(file)
-			conf.close()
-		except:
-			print "Error while saving config file !"
-
-	def getConfig(self):
-		home 	= os.path.expanduser("~")
-		dir   = '/.stereo3D/'
-		name 	= 'general.conf'
-		path =  home + dir + name
-		self.conf = {}
-		try:
-			conf = open(path)
-			for line in conf.readlines():
-				if line.find('=') > 0:
-					key, value = line[0:].split(" = ",2)
-					self.conf[key] = value.replace('\n', '')
-			conf.close()
-		except:
-			self.conf['mode'] = "ANAGLYPH"
-			self.conf['type'] = "red/cyan"
-			self.conf['eye'] = "LEFT"
-			print "Error while parsing config file !"
-		print self.conf
 
 	#
 	# # Close functions
@@ -126,24 +90,28 @@ class GUI:
 	def delete_event(self, widget, event=None, data=None): # Clean Closing
 		print "Delete event"
 		self.img.__del__()
-		self.saveConfig()
+		functions.saveConfig(self, 'main', self.conf)
 		gtk.timeout_add(100, gtk.main_quit)
 		return True # Do not allow OS to destroy we will kill ourselves in due time
 
 	def destroy(self, widget, data=None): # Closing
 		print "Destroy"
 		self.img.__del__()
-		self.saveConfig()
+		functions.saveConfig(self, 'main', self.conf)
 		gtk.timeout_add(100, gtk.main_quit)
 	
 	#
 	# # Functions for controlling dialog windows
 	#	
-	def about(self, button): # Pop-up about
+	def about(self, button): # About Window
 		self.about_dialog.run()
 		self.about_dialog.hide()
-			
-	def run_pref(self, button): # Pop up preferences
+	
+	def open(self, button): # Open Window
+		self.open_dialog.run()
+		self.open_dialog.hide()
+
+	def run_pref(self, button): # Preferences Window
 		resp = self.options_dialog.run()
 		if resp == 1:
 			self.options_dialog.hide()
@@ -186,11 +154,15 @@ class GUI:
 		response = dialog.run()
 		if response == gtk.RESPONSE_OK:
 			fopen 			= dialog.get_filename()
+			context_id = self.status_bar.get_context_id("Open")
+			self.status_bar.push(context_id, "Opening '"+fopen+"'")
+			
 			self.vergence 	= 0 # reset decallage
 			self.src_info 	= os.path.split(fopen)
-			
 			self.img.open(fopen)
 			self.modify_image()
+			
+			self.status_bar.pop(context_id)
 		elif response == gtk.RESPONSE_CANCEL:
 			print 'File selection aborted'
 		dialog.destroy()
@@ -256,11 +228,11 @@ class GUI:
 			self.modify_image(1,1)
 
 	def onImageMove(self, button): # Next/Previous image in the directory
-		if button.get_label() == '>>':
+		if button.get_stock_id() == 'gtk-go-forward':
 			mode = 1
-		elif button.get_label() == '<<':
+		elif button.get_stock_id() == 'gtk-go-back':
 			mode = -1
-			
+		
 		extension 	= "jps" # Only jps
 		path 			= self.src_info[0]
 
@@ -334,8 +306,8 @@ class GUI:
 				else:
 					button.set_active(True)
 					self.flag = False	
-		else:
-			print "New eye value ignored because flag set"
+		#else:
+		#	print "New eye value ignored because flag set"
 
 	#
 	# # Functions about Rendering Mode
@@ -396,8 +368,8 @@ class GUI:
 			else:
 				button.set_active(True)
 				self.flag = False		
-		else:
-			print "New mode value ignored because flag set"
+		#else:
+		#	print "New mode value ignored because flag set"
 	
 	#
 	# # Functions for controlling the image display
@@ -411,44 +383,40 @@ class GUI:
 	# print display.get_name() -> :0:0
 	# print self.window.set_screen(gtk.gdk.screen_get_default())
 	# gdk.screen_width(), gdk.screen_height()
-	
-	def modify_image(self, force=0, normale=0): # Redisplaying the image including changes (size, vergence ...) 
+		
+	def modify_image(self, force=0, normale=0): # Displaying the image (includes changes like size, vergence ...)
 		self.img.resize(self.max_width*(1 + self.zoom_percent), self.max_height*(1 + self.zoom_percent), force, normale)
 		
-		get 	= self.img.make()
+		get = self.img.make()
 		
 		if self.conf['mode'] != "DUAL OUTPUT" and self.conf['mode'] != "SHUTTERS":
-			pixbuf = self.image_to_pixbuf( get )
-			self.stereo.set_from_pixbuf(pixbuf) # Affichage
+			pixbuf = functions.image_to_pixbuf(self, get)
+			self.stereo.set_from_pixbuf(pixbuf) # Display
 		else:
-			left = self.image_to_pixbuf( get[0] )
-			right = self.image_to_pixbuf( get[1] )
-			self.doleft.set_from_pixbuf(left) # displaying
-			self.doright.set_from_pixbuf(right) # displaying
+			image1 = functions.image_to_pixbuf(self, get[0]) # Left OR Top
+			image2 = functions.image_to_pixbuf(self, get[1]) # Right OR Bottom
 			location = self.window.get_position()
-			self.dualoutput_window.move(location[0],location[1])
-			self.dualoutput_window.fullscreen()
-			self.dualoutput_window.show()
-		
-	def image_to_pixbuf(self,image):
-		fd = StringIO.StringIO()
-		image.save(fd, "ppm")
-		contents = fd.getvalue()
-		fd.close()
-		loader = gtk.gdk.PixbufLoader("pnm")
-		loader.write(contents, len(contents))
-		pixbuf = loader.get_pixbuf()
-		loader.close()
-		return pixbuf
+			
+			if self.img.conf['type'] == "top/bottom": # Dual Output Vertical		
+				self.dotop.set_from_pixbuf(image1)
+				self.dobottom.set_from_pixbuf(image2)
+				self.vertical_window.move(location[0],location[1])
+				self.vertical_window.fullscreen()
+				self.vertical_window.show()
+			else: # Dual Output Horizontal OR Shutters
+				self.doleft.set_from_pixbuf(image1)
+				self.doright.set_from_pixbuf(image2)
+				self.horizontal_window.move(location[0],location[1])
+				self.horizontal_window.fullscreen()
+				self.horizontal_window.show()
 
-# == On lance le programme
 if __name__ == "__main__":
 	def main(argv):
 		fopen = "None"
 		
-		if len(argv) >= 1: # Il y a (au moins) un argument
+		if len(argv) >= 1: # At least one argument
 			
-			if argv[0][0] == "/": # Cas du lancement auto
+			if argv[0][0] == "/": # autolaunch (i.e. nautilus)
 				fopen = ' '.join(argv[0:])
 			else:
 				try:
@@ -473,10 +441,7 @@ if __name__ == "__main__":
 		print "Usage:"
 		print "    -h, --help : affiche ce message d'aide."
 		print "    -f, --file : ouvre le fichier specifie."
-
-	# Lancement du prog
-	#	-> verification des param
-	#	-> creation de la GUI
+	
 	fopen = "None"
 	fopen = main(sys.argv[1:])
 	GUI(fopen).main()

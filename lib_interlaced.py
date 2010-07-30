@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding:utf-8 -*-
 
-import stereoIMG
+import functions
 import Image
 import math
 
@@ -9,22 +9,26 @@ class Interlaced:
 	"Interlaced support class"
 	
 	def __init__(self):
-		self.image 				= stereoIMG.stereoIMG()
 		self.vergence			= 0 # Horizontal separation
 		self.vsep				= 0 # Vertical separation
-		self.hardware 			= '' # Zalman, iZ3D ...
-		self.mode 				= 'h1' # Horizontal Interlacement from 1 px
 		self.left 	= self.right = ''
 		self.height = self.width = 0
+		
+		self.conf	= functions.getConfig(self, 'interlaced')
+		if self.conf == 0: # default configuration
+			self.conf = {}
+			self.conf['hardware'] = 'Zalman' # OR  IZ3D
+			self.conf['type'] = 'h1' # adaptable
+		
 		self.SpecialHardware("on")
 
 	def __del__(self):
+		functions.saveConfig(self, 'interlaced', self.conf)
 		self.SpecialHardware("off")
-		print "del int"
 
 	def open(self, path, anaglyph=False): # TODO Open Anaglyph doesn't work anymore
 		try:
-			self.left, self.right 	= self.image.set_sources_from_stereo(path, anaglyph)
+			self.left, self.right 	= functions.set_sources_from_stereo(self, path, anaglyph)
 			self.oleft, self.oright = self.left, self.right # Back-up
 			size = self.left.size
 			self.height, self.width = size[1], size[0]
@@ -33,7 +37,7 @@ class Interlaced:
 
 	def open2(self, path='None', image='None'):
 		 if path != 'None':
-		 	self.image.set_sources_from_images(path[0], path[1])
+		 	functions.set_sources_from_images(self, path[0], path[1])
 		 elif image[0] != '':
 		 	self.left, self.right 	= image[0], image[1]
 			self.oleft, self.oright = image[0], image[1] # Back-up
@@ -84,8 +88,8 @@ class Interlaced:
 				
 	def SpecialHardware(self, go='on'): # Special Hardware actvation
 		if go == 'on':
-			if self.hardware == 'eDimensionnal':
+			if self.conf['hardware'] == 'eDimensionnal':
 				exec('edimActivator --INTERLACED') # activate eDimensionnal in Interlaced Mode
 		else:
-			if self.hardware == 'eDimensionnal':
+			if self.conf['hardware'] == 'eDimensionnal':
 				exec('edimActivator --OFF')

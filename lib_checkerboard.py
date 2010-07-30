@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding:utf-8 -*-
 
-import stereoIMG
+import functions
 import Image
 import math
 
@@ -9,20 +9,22 @@ class CheckerBoard:
 	"Checkerboard support class"
 	
 	def __init__(self):
-		self.image 				= stereoIMG.stereoIMG()
 		self.vergence			= 0 # Horizontal separation
 		self.vsep				= 0 # Vertical separation
-		self.hardware 			= '' 
-		self.mode 				= ''
-		self.left = self.right = '' # Right and left Images
+		self.left 	= self.right = '' # Right and left Images
 		self.height = self.width = 0 # Height and Width
-	
+		
+		self.conf	= functions.getConfig(self, 'checkerboard')
+		if self.conf == 0: # default configuration
+			self.conf = {}
+			self.conf['hardware'] = '3DTV'
+			
 	def __del__(self):
-		print "del checkerboard"
+		functions.saveConfig(self, 'checkerboard', self.conf)
 	
 	def open(self, path, anaglyph=False):
 		try:
-			self.left, self.right 	= self.image.set_sources_from_stereo(path, anaglyph)
+			self.left, self.right 	= functions.set_sources_from_stereo(self, path, anaglyph)
 			self.oleft, self.oright = self.left, self.right # Back-up
 			size = self.left.size
 			self.height, self.width = size[1], size[0]
@@ -31,7 +33,7 @@ class CheckerBoard:
 	
 	def open2(self, path='None', image='None'):
 		 if path != 'None':
-		 	self.image.set_sources_from_images(path[0], path[1])
+		 	functions.set_sources_from_images(self, path[0], path[1])
 		 elif image[0] != '':
 		 	self.left, self.right 	= image[0], image[1]
 			self.oleft, self.oright = image[0], image[1] # Back-up
