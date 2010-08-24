@@ -16,27 +16,58 @@ class Nvidia:
 	
 	def __init__(self):
 		self.validRefreshRate 	= [85, 100, 75, 72, 70, 60]
-		self.currentRefreshRate	= self.validRefreshRate[0]
+		self.currentRefreshRate	= 0
 		self.eye				= 'left'
 		
-		busses 		= usb.busses()
-		self.device = self.findDevice(busses, 0x0955, 0x0007)
-		# self.device = usb.core.find(idVendor=0955, idProduct=0007) pyUSB 1.0
+		busses		= usb.busses()
+		self.dev	= self.findDevice(busses, 0x0007, 0x0955)
 
-		if self.device is None:
+		if self.dev is None:
 			print "enumeration test failed..." 
-			sys.exit(1) 
-			raise ValueError('Nvidia 3D Vision not detected')
+			#sys.exit(1) 
+			#raise ValueError('Nvidia 3D Vision not detected')
 		
-		self.device.set_configuration() # set the active configuration. With no arguments, the first configuration will be the active one
-		#self.getEndpoint()
+		try:
+			self.pipe0 = self.dev.open()
+			self.pipe1 = self.dev.open()
+			self.refresh()
+		except:
+			print "Can't initialise Nvidia 3D Vision"
 	
+	def __del__(self):
+		self.pipe0.reset()
+		del self.pipe0
+		
+		self.pipe1.reset()
+		del self.pipe1
+
 	def findDevice(self, busses, idProduct, idVendor):
 		for bus in busses:
 			for dev in bus.devices:
 				if dev.idProduct == idProduct and dev.idVendor == idVendor:
 					return dev
-
+	
+	def refresh(self): # refresh variables and initialize usb device
+		rate = self.validRefreshRate[self.currentRefreshRate]
+		a = (0.1748910 * (rate*rate*rate) - 54.5533 * (rate*rate) + 6300.40 * (rate) - 319395.0)
+		b = (0.0582808 * (rate*rate*rate) - 18.1804 * (rate*rate) + 2099.82 * (rate) - 101257.0)
+		c = (0.3495840 * (rate*rate*rate) - 109.060 * (rate*rate) + 12597.3 * (rate) - 638705.0)
+		
+		sequence = [ 0x00031842, 0x00180001, a, b, 0xfffff830, 0x22302824, 0x040a0805, c, 0x00021c01, 0x00000002, 0x00021e01, rate*2, 0x00011b01, 0x00000007, 0x00031840 ]
+		
+		readPipe = self.dev.open()				
+		
+		#writeToPipe(pipe0, sequence, 4);
+		#readFromPipe(readPipe, readBuffer, 7);
+		#writeToPipe(pipe0, sequence+1, 28);
+		#writeToPipe(pipe0, sequence+8, 6);
+		#writeToPipe(pipe0, sequence+10, 6);
+		#writeToPipe(pipe0, sequence+12, 5);
+		#writeToPipe(pipe0, sequence+13, 4);
+		
+		self.readPipe.reset()
+		del self.readPipe
+		
 print "enumeration device test..." 			
 nv = Nvidia()
 print "enumeration test ok..."
