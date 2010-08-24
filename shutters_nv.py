@@ -29,11 +29,9 @@ class Nvidia:
 		#	print "Can't initialise Nvidia 3D Vision"
 	
 	def __del__(self):
-		self.pipe0.reset()
 		del self.pipe0
-		
-		self.pipe1.reset()
 		del self.pipe1
+		del self.busses
 	
 	def getDevice(self):
 		dev = self.findDevice(self.busses, 0x0007, 0x0955)
@@ -56,18 +54,17 @@ class Nvidia:
 		
 		sequence = [ 0x00031842, 0x00180001, a, b, 0xfffff830, 0x22302824, 0x040a0805, c, 0x00021c01, 0x00000002, 0x00021e01, rate*2, 0x00011b01, 0x00000007, 0x00031840 ]
 		
-		readPipe = self.dev.open()				
+		readPipe = self.getDevice()			
 		
-		#writeToPipe(pipe0, sequence, 4);
-		#readFromPipe(readPipe, readBuffer, 7);
-		#writeToPipe(pipe0, sequence+1, 28);
-		#writeToPipe(pipe0, sequence+8, 6);
-		#writeToPipe(pipe0, sequence+10, 6);
-		#writeToPipe(pipe0, sequence+12, 5);
-		#writeToPipe(pipe0, sequence+13, 4);
-		
-		self.readPipe.reset()
-		del self.readPipe
+		#self.write(self.pipe0, sequence, 4);
+		#self.read(readPipe, readBuffer, 7);
+		#self.write(self.pipe0, sequence+1, 28);
+		#self.write(self.pipe0, sequence+8, 6);
+		#self.write(self.pipe0, sequence+10, 6);
+		#self.write(self.pipe0, sequence+12, 5);
+		#self.write(self.pipe0, sequence+13, 4);
+
+		del readPipe
 	
 	def toggleEyes(self, offset):
 		if(self.eye == 'left'):
@@ -75,7 +72,7 @@ class Nvidia:
 		else:
 			sequence = [ 0x0000ffaa, offset ]
 		
-		#writeToPipe(pipe1, sequence, 8)
+		#self.write(self.pipe1, sequence, 8)
 		self.eye = 'right'
 	
 	def nextRefreshRate(self, offset):
