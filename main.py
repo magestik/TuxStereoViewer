@@ -11,7 +11,9 @@ import pygtk
 pygtk.require('2.0')
 import gtk
 
-import sys, os, glob, getopt, string
+#from gettext import gettext as _
+
+import sys, os, glob, getopt, string, webbrowser
 import functions
 
 class GUI:	
@@ -44,28 +46,28 @@ class GUI:
 		self.stereo 		= self.interface.get_object("stereo") # Where we want to display the stereo image
 		self.status_bar 	= self.interface.get_object("statusBar")
 		
-		self.about_dialog 	= self.interface.get_object("AboutWin")
+		self.about_dialog 		= self.interface.get_object("AboutWin")
 		self.options_dialog 	= self.interface.get_object("OptionsWin")
 		#self.open_dialog 		= self.interface.get_object("OpenWin")
 		
 		# Dual Output Horizontal
-		self.doright 					= self.interface.get_object("do-right") 	# Right image for h dual output format
-		self.doleft 					= self.interface.get_object("do-left") 	# Left image for h dual output format
+		self.doright				= self.interface.get_object("do-right") 	# Right image for h dual output format
+		self.doleft 				= self.interface.get_object("do-left") 	# Left image for h dual output format
 		self.horizontal_window 		= self.interface.get_object("H-DualOutWin")
 		
 		# Dual Output Vertical
-		self.dotop 						= self.interface.get_object("do-top") 		# Top image for v dual output format
-		self.dobottom 					= self.interface.get_object("do-bottom") 	# Bottom image for v dual output format
-		self.vertical_window 		= self.interface.get_object("V-DualOutWin")
+		self.dotop 				= self.interface.get_object("do-top") 		# Top image for v dual output format
+		self.dobottom 			= self.interface.get_object("do-bottom") 	# Bottom image for v dual output format
+		self.vertical_window	= self.interface.get_object("V-DualOutWin")
 		
 		# Quick configurations menus
 		self.re_menu 		= self.interface.get_object("right_eye_menu")
 		self.le_menu 		= self.interface.get_object("left_eye_menu")
 
-		self.imode_menu	= self.interface.get_object("inter_mode_menu")
+		self.imode_menu		= self.interface.get_object("inter_mode_menu")
 		self.domode_menu	= self.interface.get_object("dualout_mode_menu")
-		self.amode_menu	= self.interface.get_object("ana_mode_menu")
-		self.smode_menu	= self.interface.get_object("shutter_mode_menu")
+		self.amode_menu		= self.interface.get_object("ana_mode_menu")
+		self.smode_menu		= self.interface.get_object("shutter_mode_menu")
 		self.cbmode_menu	= self.interface.get_object("checkerboard_menu")
 		# self.tbmode_menu	= self.interface.get_object("top_bottom_menu")
 		# self.lrmode_menu	= self.interface.get_object("left_right_menu")
@@ -119,6 +121,18 @@ class GUI:
 		else:
 			self.options_dialog.hide()
 	
+	def offline_help(self, button):
+		print 'Not yet'
+					
+	def online_help(self, button):
+		url = 'https://answers.launchpad.net/tsv'
+		# Open URL in new window, raising the window if possible.
+		webbrowser.open_new(url)
+	
+	def translate(self, button):
+		url = 'https://translations.launchpad.net/tsv'
+		# Open URL in new window, raising the window if possible.
+		webbrowser.open_new(url)
 	#
 	# # Open functions
 	#		
@@ -252,7 +266,9 @@ class GUI:
 		self.src_info		= os.path.split(fichiers[index]) # Mise a jour
 		self.display_image(fichiers[index])
 	
-	def onSeperationClick(self, button):	
+	def onSeperationClick(self, button):
+		print button
+		
 		if button.get_label() == 'h+':
 			self.img.vergence -= 1
 		elif button.get_label() == 'h0':
@@ -411,37 +427,30 @@ class GUI:
 				self.horizontal_window.show()
 
 if __name__ == "__main__":
-	def main(argv):
-		fopen = "None"
-		
-		if len(argv) >= 1: # At least one argument
-			
-			if argv[0][0] == "/": # autolaunch (i.e. nautilus)
-				fopen = ' '.join(argv[0:])
-			else:
-				try:
-					opts, args = getopt.getopt(argv, "hf:", ["help", "file="])
-					print "Test arg"	
-				
-					for opt, arg in opts: # Traitement des parametres
-						if opt in ("-h", "--help"):
-							usage()
-							sys.exit()
-						elif opt in ("-f", "--file"):
-							fopen = arg
-				except getopt.GetoptError, err:
-					print str(err)
-					usage()
-					sys.exit(2)
-			
-		return fopen		
+	fopen = "None"
+	argv = sys.argv[1:]
+	
+	if len(argv) >= 1: # At least one argument
+		if argv[0][0] == "/": # autolaunch (i.e. nautilus)
+			fopen = ' '.join(argv[0:])
+		else:
+			try:
+				opts, args = getopt.getopt(argv, "hf:", ["help", "file="])
+				for opt, arg in opts: # Traitement des parametres
+					if opt in ("-h", "--help"):
+						usage()
+						sys.exit()
+					elif opt in ("-f", "--file"):
+						fopen = arg
+			except getopt.GetoptError, err:
+				print str(err)
+				usage()
+				sys.exit(2)
 	
 	def usage():
 		print "Tux Stereo Viewer"
 		print "Usage:"
 		print "    -h, --help : affiche ce message d'aide."
 		print "    -f, --file : ouvre le fichier specifie."
-	
-	fopen = "None"
-	fopen = main(sys.argv[1:])
+
 	GUI(fopen).main()

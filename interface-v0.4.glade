@@ -22,14 +22,6 @@
                   <object class="GtkMenu" id="menu1">
                     <property name="visible">True</property>
                     <child>
-                      <object class="GtkImageMenuItem" id="imagemenuitem1">
-                        <property name="label">gtk-new</property>
-                        <property name="visible">True</property>
-                        <property name="use_underline">True</property>
-                        <property name="use_stock">True</property>
-                      </object>
-                    </child>
-                    <child>
                       <object class="GtkImageMenuItem" id="imagemenuitem2">
                         <property name="label">Open Stereo Image</property>
                         <property name="visible">True</property>
@@ -107,14 +99,14 @@
                   <object class="GtkMenu" id="menu5">
                     <property name="visible">True</property>
                     <child>
-                      <object class="GtkMenuItem" id="toolbar_check">
+                      <object class="GtkCheckMenuItem" id="toolbar_check">
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">Barre d'outils</property>
                         <property name="use_underline">True</property>
                       </object>
                     </child>
                     <child>
-                      <object class="GtkMenuItem" id="statusbar_check">
+                      <object class="GtkCheckMenuItem" id="statusbar_check">
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">Barre d'&#xE9;tat</property>
                         <property name="use_underline">True</property>
@@ -242,6 +234,41 @@
                 <child type="submenu">
                   <object class="GtkMenu" id="menu3">
                     <property name="visible">True</property>
+                    <child>
+                      <object class="GtkMenuItem" id="offline_help">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Sommaire</property>
+                        <property name="use_underline">True</property>
+                        <accelerator key="F1" signal="activate"/>
+                        <signal name="activate" handler="offline_help"/>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkSeparatorMenuItem" id="menuitem12">
+                        <property name="visible">True</property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkMenuItem" id="online_help">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Obtenir de l'aide en ligne...</property>
+                        <property name="use_underline">True</property>
+                        <signal name="activate" handler="online_help"/>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkMenuItem" id="translate">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Traduire cette application...</property>
+                        <property name="use_underline">True</property>
+                        <signal name="activate" handler="translate"/>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkSeparatorMenuItem" id="menuitem8">
+                        <property name="visible">True</property>
+                      </object>
+                    </child>
                     <child>
                       <object class="GtkImageMenuItem" id="imagemenuitem10">
                         <property name="label">gtk-about</property>

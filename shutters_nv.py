@@ -19,8 +19,8 @@ class Nvidia:
 		self.currentRefreshRate	= self.validRefreshRate[0]
 		self.eye				= 'left'
 		
-		busses = usb.busses()
-		self.device = self.findDevice(busses, 0x000c, 0x0555)
+		busses 		= usb.busses()
+		self.device = self.findDevice(busses, 0x0955, 0x0007)
 		# self.device = usb.core.find(idVendor=0955, idProduct=0007) pyUSB 1.0
 
 		if self.device is None:
