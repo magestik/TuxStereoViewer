@@ -19,17 +19,11 @@ class Nvidia:
 		self.currentRefreshRate	= 0
 		self.eye				= 'left'
 		
-		busses		= usb.busses()
-		self.dev	= self.findDevice(busses, 0x0007, 0x0955)
+		self.busses		= usb.busses()
 
-		if self.dev is None:
-			print "enumeration test failed..." 
-			#sys.exit(1) 
-			#raise ValueError('Nvidia 3D Vision not detected')
-		
 		#try:
-		self.pipe0 = self.dev.open()
-		self.pipe1 = self.dev.open()
+		self.pipe0 = self.getDevice()
+		self.pipe1 = self.getDevice()
 		self.refresh()
 		#except:
 		#	print "Can't initialise Nvidia 3D Vision"
@@ -40,7 +34,14 @@ class Nvidia:
 		
 		self.pipe1.reset()
 		del self.pipe1
-
+	
+	def getDevice(self):
+		dev = self.findDevice(self.busses, 0x0007, 0x0955)
+		if dev is None:
+			print 'Nvidia 3D Vision not detected'
+			#raise ValueError('Nvidia 3D Vision not detected')
+		return dev.open()
+	
 	def findDevice(self, busses, idProduct, idVendor):
 		for bus in busses:
 			for dev in bus.devices:
@@ -79,7 +80,7 @@ class Nvidia:
 	
 	def nextRefreshRate(self, offset):
 		self.currentRefreshRate = self.currentRefreshRate + 1
-		if (self.currentRefreshRate >= len(self.validRefreshRate))
+		if (self.currentRefreshRate >= len(self.validRefreshRate)):
 			self.currentRefreshRate = 0
 		
 		self.refresh()
