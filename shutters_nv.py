@@ -27,12 +27,12 @@ class Nvidia:
 			#sys.exit(1) 
 			#raise ValueError('Nvidia 3D Vision not detected')
 		
-		try:
-			self.pipe0 = self.dev.open()
-			self.pipe1 = self.dev.open()
-			self.refresh()
-		except:
-			print "Can't initialise Nvidia 3D Vision"
+		#try:
+		self.pipe0 = self.dev.open()
+		self.pipe1 = self.dev.open()
+		self.refresh()
+		#except:
+		#	print "Can't initialise Nvidia 3D Vision"
 	
 	def __del__(self):
 		self.pipe0.reset()
@@ -67,6 +67,22 @@ class Nvidia:
 		
 		self.readPipe.reset()
 		del self.readPipe
+	
+	def toggleEyes(self, offset):
+		if(self.eye == 'left'):
+			sequence = [ 0x0000feaa, offset ]
+		else:
+			sequence = [ 0x0000ffaa, offset ]
+		
+		#writeToPipe(pipe1, sequence, 8)
+		self.eye = 'right'
+	
+	def nextRefreshRate(self, offset):
+		self.currentRefreshRate = self.currentRefreshRate + 1
+		if (self.currentRefreshRate >= len(self.validRefreshRate))
+			self.currentRefreshRate = 0
+		
+		self.refresh()
 		
 print "enumeration device test..." 			
 nv = Nvidia()
