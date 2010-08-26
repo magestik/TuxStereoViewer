@@ -40,7 +40,7 @@ class Anaglyph:
 			taille = self.right.size
 			self.height, self.width = taille[1], taille[0]
 	
-	def make(self):
+	def make(self, parent):
 		width 		= self.width + math.fabs(self.vergence)
 		height 		= self.height + math.fabs(self.vsep)
 		self.stereo = Image.new('RGB', (width,height)) # Final image
@@ -61,7 +61,9 @@ class Anaglyph:
 		# "R-V", "V-B", "B-R", "V-R", "B-V", "R-B"
 
 		self.stereo = Image.merge("RGB", source)
-		return self.stereo
+		
+		pixbuf = functions.image_to_pixbuf(self, self.stereo)
+		parent.stereo.set_from_pixbuf(pixbuf) # Display
 	
 	def resize(self, maxw, maxh, force=0, normal=0):
 		if normal == 1: # Scale 1:1

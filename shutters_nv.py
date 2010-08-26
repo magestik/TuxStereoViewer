@@ -3,13 +3,6 @@ import usb # importa o nosso modulo
 import sys
 from time import sleep
 
-# In "/var/log/syslog" :
-# Aug 13 20:07:48 desktop01 kernel: [35638.636030] usb 1-8: new high speed USB device using ehci_hcd and address 5
-# Aug 13 20:07:48 desktop01 kernel: [35638.773155] usb 1-8: New USB device found, idVendor=0955, idProduct=0007
-# Aug 13 20:07:48 desktop01 kernel: [35638.773160] usb 1-8: New USB device strings: Mfr=1, Product=2, SerialNumber=0
-# Aug 13 20:07:48 desktop01 kernel: [35638.773163] usb 1-8: Product: NVIDIA stereo controller
-# Aug 13 20:07:48 desktop01 kernel: [35638.773172] usb 1-8: Manufacturer: Copyright (c) 2008 NVIDIA Corporation
-# Aug 13 20:07:48 desktop01 kernel: [35638.773288] usb 1-8: configuration #1 chosen from 1 choice
 
 class Nvidia:
 	"Abstract class for Nvidia 3D Vision controll"
@@ -18,34 +11,75 @@ class Nvidia:
 		self.validRefreshRate 	= [85, 100, 75, 72, 70, 60]
 		self.currentRefreshRate	= 0
 		self.eye				= 'left'
-		
-		self.busses		= usb.busses()
 
-		#try:
-		self.pipe0 = self.getDevice()
-		self.pipe1 = self.getDevice()
-		self.refresh()
-		#except:
-		#	print "Can't initialise Nvidia 3D Vision"
-	
+		try:
+			self.handle = self.getDevice()
+		except:
+			print "Can't initialise Nvidia 3D Vision"
+		
+		try:
+			self.handle.setConfiguration(1) 
+			self.handle.claimInterface(0) 
+		except:
+			print "Error during initialisation"
+		
 	def __del__(self):
-		del self.pipe0
-		del self.pipe1
-		del self.busses
+		try:
+			self.handle.releaseInterface()
+			del self.handle
+		except: # n'existe pas
+			pass
+
+	#
+	# Functions for Writing/Reading in USB
+	#
+	def write(self, endpoint, data, size = 0):
+		self.handle.bulkWrite(endpoint, data, 1000)
 	
-	def getDevice(self):
-		dev = self.findDevice(self.busses, 0x0007, 0x0955)
+	def read(self, endpoint, size):
+		return self.handle.bulkWrite(endpoint, size, 1000)
+
+	
+	#
+	# Functions for initialising the Controller
+	#
+	def getDevice(self): # Make the link with the controller
+		dev = self.findDevice(0x0007, 0x0955)	
 		if dev is None:
-			print 'Nvidia 3D Vision not detected'
-			#raise ValueError('Nvidia 3D Vision not detected')
+			raise ValueError('Nvidia 3D Vision not detected')
+		
+		ep = self.checkDevice(dev)
+		if ep == 0:
+			self.loadFirmware()
+		
 		return dev.open()
 	
-	def findDevice(self, busses, idProduct, idVendor):
-		for bus in busses:
+	def findDevice(self, idProduct, idVendor): # Find the controller
+		busses		= usb.busses() # List of all USB devices
+		for bus in busses: # Search for Nvidia 3D Vision
 			for dev in bus.devices:
 				if dev.idProduct == idProduct and dev.idVendor == idVendor:
 					return dev
 	
+	def checkDevice(self, dev): # Get Endpoints
+		configs 		= dev.configurations[0]
+		interface 		= configurats.interfaces[0][0]
+		self.endpoints 	= []
+		self.pipes 		= []
+		count 			= 0
+		for endpoint in interface:
+			count = count + 1
+			self.endpoints.append(endpoint)
+			self.pipes.append(endpoint.address)
+		return count
+
+	def loadFirmware(self):
+		print "Trying to load Firmware ..."
+		pass # TODO
+	
+	#
+	# Functions for controlling the Dongle
+	#	
 	def refresh(self): # refresh variables and initialize usb device
 		rate = self.validRefreshRate[self.currentRefreshRate]
 		a = (0.1748910 * (rate*rate*rate) - 54.5533 * (rate*rate) + 6300.40 * (rate) - 319395.0)
@@ -65,6 +99,13 @@ class Nvidia:
 		#self.write(self.pipe0, sequence+13, 4);
 
 		del readPipe
+
+	def nextRefreshRate(self, offset):
+		self.currentRefreshRate = self.currentRefreshRate + 1
+		if (self.currentRefreshRate >= len(self.validRefreshRate)):
+			self.currentRefreshRate = 0
+		
+		self.refresh()
 	
 	def toggleEyes(self, offset):
 		if(self.eye == 'left'):
@@ -74,16 +115,17 @@ class Nvidia:
 		
 		#self.write(self.pipe1, sequence, 8)
 		self.eye = 'right'
-	
-	def nextRefreshRate(self, offset):
-		self.currentRefreshRate = self.currentRefreshRate + 1
-		if (self.currentRefreshRate >= len(self.validRefreshRate)):
-			self.currentRefreshRate = 0
-		
-		self.refresh()
-		
-print "enumeration device test..." 			
-nv = Nvidia()
-print "enumeration test ok..."
 
-sleep(10)
+	def eventKeys(self): # Ask for key whiwh have been pressed
+		cmd1 = [NVSTUSB_CMD_READ | NVSTUSB_CMD_CLEAR, 0x18, 0x03, 0x00]
+		self.write(2, cmd1);
+		
+		data = self.read(4, len(readBuf))
+		
+		key 				= []
+		key["wheelNormal"] 	= data[4] # Roulement de la molette
+		key["wheelPressed"]	= data[5] # Appui sur la molette
+		key["frontButton"]	= readBuf[6] & 0x01; # ???
+
+if __name__ == "__main__":
+	nv = Nvidia()

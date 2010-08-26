@@ -44,7 +44,7 @@ class Interlaced:
 			taille = self.right.size
 			self.height, self.width = taille[1], taille[0]
 			
-	def make(self):
+	def make(self, parent):
 		width 		= self.width + math.fabs(self.vergence)
 		height 		= self.height + math.fabs(self.vsep)
 		self.stereo = Image.new('RGB', (width,height)) # Final image
@@ -53,7 +53,9 @@ class Interlaced:
 		while i < self.height:
 			self.copyPaste(i, self.vergence)
 			i = i + 1
-		return self.stereo
+		
+		pixbuf = functions.image_to_pixbuf(self, self.stereo)
+		parent.stereo.set_from_pixbuf(pixbuf) # Display
 	
 	def copyPaste(self, row, decallage):	
 		if row%2 == 0:

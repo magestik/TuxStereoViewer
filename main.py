@@ -15,6 +15,7 @@ import gtk
 
 import sys, os, glob, getopt, string, webbrowser
 import functions
+from threading import Thread
 
 class GUI:	
 	def main(self): # Main loop
@@ -402,29 +403,8 @@ class GUI:
 		
 	def modify_image(self, force=0, normale=0): # Displaying the image (includes changes like size, vergence ...)
 		self.img.resize(self.max_width*(1 + self.zoom_percent), self.max_height*(1 + self.zoom_percent), force, normale)
-		
-		get = self.img.make()
-		
-		if self.conf['mode'] != "DUAL OUTPUT" and self.conf['mode'] != "SHUTTERS":
-			pixbuf = functions.image_to_pixbuf(self, get)
-			self.stereo.set_from_pixbuf(pixbuf) # Display
-		else:
-			image1 = functions.image_to_pixbuf(self, get[0]) # Left OR Top
-			image2 = functions.image_to_pixbuf(self, get[1]) # Right OR Bottom
-			location = self.window.get_position()
-			
-			if self.img.conf['type'] == "top/bottom": # Dual Output Vertical		
-				self.dotop.set_from_pixbuf(image1)
-				self.dobottom.set_from_pixbuf(image2)
-				self.vertical_window.move(location[0],location[1])
-				self.vertical_window.fullscreen()
-				self.vertical_window.show()
-			else: # Dual Output Horizontal OR Shutters
-				self.doleft.set_from_pixbuf(image1)
-				self.doright.set_from_pixbuf(image2)
-				self.horizontal_window.move(location[0],location[1])
-				self.horizontal_window.fullscreen()
-				self.horizontal_window.show()
+		self.img.make()
+
 
 if __name__ == "__main__":
 	fopen = "None"

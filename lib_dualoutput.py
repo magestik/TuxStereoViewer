@@ -44,8 +44,23 @@ class DualOutput:
 			taille = self.right.size
 			self.height, self.width = taille[1], taille[0]
 					 
-	def make(self):
-		return [self.left, self.right]
+	def make(self, parent):
+		image1 = functions.image_to_pixbuf(self, self.left) # Left OR Top
+		image2 = functions.image_to_pixbuf(self, self.right) # Right OR Bottom
+		location = parent.window.get_position()
+		
+		if self.conf['type'] == "top/bottom": # Dual Output Vertical		
+			parent.dotop.set_from_pixbuf(image1)
+			parent.dobottom.set_from_pixbuf(image2)
+			parent.vertical_window.move(location[0],location[1])
+			parent.vertical_window.fullscreen()
+			parent.vertical_window.show()
+		else: # Dual Output Horizontal OR Shutters
+			parent.doleft.set_from_pixbuf(image1)
+			parent.doright.set_from_pixbuf(image2)
+			parent.horizontal_window.move(location[0],location[1])
+			parent.horizontal_window.fullscreen()
+			parent.horizontal_window.show()
 	
 	def swap_eyes(self):
 		self.left, self.right = self.right, self.left

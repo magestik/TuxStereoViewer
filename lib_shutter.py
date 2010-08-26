@@ -3,12 +3,12 @@
 
 import functions
 import Image
-import math
+import math, time
 
-class Shutter:
+class Shutter():
 	"Shutter Glasses support class"
 	
-	def __init__(self):
+	def __init__(self):	
 		self.vergence			= 0  # Horizontal separation
 		self.vsep				= 0  # Vertical separation
 		self.left 	= self.right = '' # Right and left Images
@@ -45,9 +45,23 @@ class Shutter:
 			taille = self.right.size
 			self.height, self.width = taille[1], taille[0]
 
-	def make(self):
-		# exec("Genlock --on")
-		return [self.left, self.right]
+	def make(self, parent):
+		left 	= functions.image_to_pixbuf(self, self.left)
+		right 	= functions.image_to_pixbuf(self, self.right)
+		condition = 0
+		i = 0
+		while True:
+			if(i == 0):
+				i = 1
+				parent.stereo.set_from_pixbuf(left) # Display
+			else:
+				i = 0
+				parent.stereo.set_from_pixbuf(right) # Display
+
+			time.sleep(1)
+			
+			if condition == 1000:
+				break
 	
 	def swap_eyes(self):
 		self.left, self.right = self.right, self.left
