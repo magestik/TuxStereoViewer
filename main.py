@@ -12,56 +12,63 @@ pygtk.require('2.0')
 import gtk
 
 #from gettext import gettext as _
+#print display.get_name() #-> :0:0
+#print self.window.set_screen(gtk.gdk.screen_get_default())
+#print gdk.screen_width(), gdk.screen_height()
 
 import sys, os, glob, getopt, string, webbrowser
 import functions
-from threading import Thread
+import gconf
 
 class GUI:	
 	def main(self): # Main loop
 		gtk.main()
 		return 0
 	
-	def __init__(self, fopen):
+	def __init__(self):
 		self.interface = gtk.Builder()
 		self.interface.add_from_file(sys.path[0] + '/interface-v0.4.glade')
 
-		self.window = self.interface.get_object("MainWin") # Main window
-		self.window.set_title("Tux stereo Viewer")
+		self.window = self.interface.get_object("MainWin")
+		self.window.set_title("Tux Stereo Viewer")
 		self.window.set_icon( gtk.gdk.pixbuf_new_from_file('/usr/share/pixmaps/TuxStereoViewer-icon.png') )
 		self.window.maximize()
 		
 		self.window.connect("destroy", self.destroy)
 		self.window.connect("delete_event", self.delete_event)
 		
-		self.max_height 		= self.max_width = 0
-		self.src_info			= os.path.split(fopen)
-		self.window_mode 		= 0 # 1 = Fullscren ; 0 = Windowed
-		self.zoom_percent		= 0 # Zoom (in %)
-		self.vergence 			= 0 # Vergence (in px)
-		self.flag 				= False
-		self.lib 				= False
+		self.gconf = gconf.client_get_default()
+		self.gconf.add_dir("/apps/tsv/general", gconf.CLIENT_PRELOAD_NONE)
 		
-		self.conf				= functions.getConfig(self, 'main')
+		#self.src_info		= os.path.split(fopen)
+		self.zoom_percent	= 0 # Zoom (in %)
+		self.vergence 		= 0 # Vergence (in px)
+		self.flag 			= False
+		self.stereo			= self.interface.get_object("stereo") # Where we want to display the stereo image
 		
-		self.stereo 		= self.interface.get_object("stereo") # Where we want to display the stereo image
-		self.status_bar 	= self.interface.get_object("statusBar")
+		self.about_dialog 	= self.interface.get_object("AboutWin")
+		self.options_dialog = self.interface.get_object("OptionsWin")
 		
-		self.about_dialog 		= self.interface.get_object("AboutWin")
-		self.options_dialog 	= self.interface.get_object("OptionsWin")
-		#self.open_dialog 		= self.interface.get_object("OpenWin")
+		# Fullscreen
+		self.fs_image 		= self.interface.get_object("fullscreenImage") # Where we want to display the fullscreen image
+		self.fs_window 		= self.interface.get_object("fullscreenWin")
+		self.fs_mode		= 0 # 1 = Fullscren ; 0 = Windowed
+		black 				= gtk.gdk.color_parse('#000000')
+		self.fs_window.modify_bg(gtk.STATE_NORMAL, black)
+		self.fs_window.fullscreen()
 		
 		# Dual Output Horizontal
-		self.doright				= self.interface.get_object("do-right") 	# Right image for h dual output format
-		self.doleft 				= self.interface.get_object("do-left") 	# Left image for h dual output format
-		self.horizontal_window 		= self.interface.get_object("H-DualOutWin")
+		self.doright		= self.interface.get_object("do-right") # Right image for h dual output format
+		self.doleft 		= self.interface.get_object("do-left") # Left image for h dual output format
+		self.horizontal_window 	= self.interface.get_object("H-DualOutWin")
 		
 		# Dual Output Vertical
-		self.dotop 				= self.interface.get_object("do-top") 		# Top image for v dual output format
-		self.dobottom 			= self.interface.get_object("do-bottom") 	# Bottom image for v dual output format
+		self.dotop 			= self.interface.get_object("do-top") # Top image for v dual output format
+		self.dobottom 		= self.interface.get_object("do-bottom") # Bottom image for v dual output format
 		self.vertical_window	= self.interface.get_object("V-DualOutWin")
 		
 		# Quick configurations menus
+		
 		self.re_menu 		= self.interface.get_object("right_eye_menu")
 		self.le_menu 		= self.interface.get_object("left_eye_menu")
 
@@ -70,37 +77,71 @@ class GUI:
 		self.amode_menu		= self.interface.get_object("ana_mode_menu")
 		self.smode_menu		= self.interface.get_object("shutter_mode_menu")
 		self.cbmode_menu	= self.interface.get_object("checkerboard_menu")
-		# self.tbmode_menu	= self.interface.get_object("top_bottom_menu")
-		# self.lrmode_menu	= self.interface.get_object("left_right_menu")
 		
-		self.set_mode( self.conf['mode'] )
-		self.set_eye( self.conf['eye'] )
+		# Toolbar
+		self.toolbar 		= self.interface.get_object("QuickChangeToolbar")
+		self.toolbar_check 	= self.interface.get_object("toolbar_check")
+		if self.gconf.get_bool("/apps/tsv/general/toolbar") == False:
+			self.toolbar_check.set_active(False)
+			self.toolbar.hide()
+		
+		# Statusbar
+		self.statusbar 	 = self.interface.get_object("statusBar")
+		self.statusbar_check = self.interface.get_object("statusbar_check")
+		if self.gconf.get_bool("/apps/tsv/general/statusbar") == False:
+			self.statusbar_check.set_active(False)
+			self.statusbar.hide()
+
+		self.set_mode( self.gconf.get_string("/apps/tsv/general/mode") )
+		self.set_eye( self.gconf.get_string("/apps/tsv/general/eye") )
 
 		self.interface.connect_signals(self)
 		self.window.show()
-		
-		if fopen != "None":
-			self.img.open(fopen)
-			self.modify_image()
+
 		
 	def onSizeAllocate(self, win, alloc):
-		self.max_height 	= alloc[3] - alloc[1]
+		self.max_height = alloc[3] - alloc[1]
 		self.max_width 	= alloc[2] - alloc[0]
+	
+	def onScroll(self, widget, event):
+		if event.direction == gtk.gdk.SCROLL_UP:
+			print "UP"
+		elif event.direction == gtk.gdk.SCROLL_DOWN:
+			print "DOWN"
+	
+	def onKeyPressed(self, widget, event):
+		if event.keyval == 65307 or event.keyval == 65480: # Escap / F11
+			if self.fs_mode == 1: # Fullscreen is active
+				self.full_screen(0)
+	
+	def onStatusbarCheck(self, button):
+		if self.statusbar_check.get_active():
+			self.statusbar.show()
+			self.gconf.set_bool("/apps/tsv/general/statusbar", True)
+		else:
+			self.statusbar.hide()
+			self.gconf.set_bool("/apps/tsv/general/statusbar", False)
+				
+	def onToolbarCheck(self, button):
+		if self.toolbar_check.get_active():
+			self.toolbar.show()
+			self.gconf.set_bool("/apps/tsv/general/toolbar", True)
+		else:
+			self.toolbar.hide()
+			self.gconf.set_bool("/apps/tsv/general/toolbar", False)
 
 	#
-	# # Close functions
+	# # Shut down functions
 	#
 	def delete_event(self, widget, event=None, data=None): # Clean Closing
 		print "Delete event"
 		self.img.__del__()
-		functions.saveConfig(self, 'main', self.conf)
 		gtk.timeout_add(100, gtk.main_quit)
 		return True # Do not allow OS to destroy we will kill ourselves in due time
 
 	def destroy(self, widget, data=None): # Closing
 		print "Destroy"
 		self.img.__del__()
-		functions.saveConfig(self, 'main', self.conf)
 		gtk.timeout_add(100, gtk.main_quit)
 	
 	#
@@ -109,10 +150,6 @@ class GUI:
 	def about(self, button): # About Window
 		self.about_dialog.run()
 		self.about_dialog.hide()
-	
-	def open(self, button): # Open Window
-		self.open_dialog.run()
-		self.open_dialog.hide()
 
 	def run_pref(self, button): # Preferences Window
 		resp = self.options_dialog.run()
@@ -134,17 +171,17 @@ class GUI:
 		url = 'https://translations.launchpad.net/tsv'
 		# Open URL in new window, raising the window if possible.
 		webbrowser.open_new(url)
+	
 	#
 	# # Open functions
 	#		
-	def file_open(self, button):
+	def openStereo(self, button):
 		dialog = gtk.FileChooserDialog("Open Stereoscopic Image", None, gtk.FILE_CHOOSER_ACTION_OPEN, (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_OPEN, gtk.RESPONSE_OK))
 		
 		dialog.set_default_response(gtk.RESPONSE_OK)
 		
 		filter = gtk.FileFilter()
-		filter.set_name("Images Stéréo")
-		# S3D Formats (si non present = inconnu = insupporte ???)
+		filter.set_name("Images Stéréo") # S3D Formats
 		filter.add_pattern("*.jps")
 		filter.add_pattern("*.JPS")
 		filter.add_pattern("*.pns")
@@ -169,20 +206,12 @@ class GUI:
 		response = dialog.run()
 		if response == gtk.RESPONSE_OK:
 			fopen 			= dialog.get_filename()
-			context_id = self.status_bar.get_context_id("Open")
-			self.status_bar.push(context_id, "Opening '"+fopen+"'")
-			
-			self.vergence 	= 0 # reset decallage
-			self.src_info 	= os.path.split(fopen)
-			self.img.open(fopen)
-			self.modify_image()
-			
-			self.status_bar.pop(context_id)
+			self.display_image(fopen, False)
 		elif response == gtk.RESPONSE_CANCEL:
 			print 'File selection aborted'
 		dialog.destroy()
 	
-	def open_ana(self, button):
+	def openAnaglyph(self, button):
 		dialog = gtk.FileChooserDialog("Open Anaglyph Image", None, gtk.FILE_CHOOSER_ACTION_OPEN, (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_OPEN, gtk.RESPONSE_OK))
 		
 		dialog.set_default_response(gtk.RESPONSE_OK)
@@ -203,29 +232,22 @@ class GUI:
 		response = dialog.run()
 		if response == gtk.RESPONSE_OK:
 			fopen 			= dialog.get_filename()
-			self.vergence 	= 0 # reset decallage
-			self.src_info 	= os.path.split(fopen)
-			
-			self.img.open(fopen, True)
-			self.modify_image()
+			self.display_image(fopen, True)
 		elif response == gtk.RESPONSE_CANCEL:
 			print 'File selection aborted'
 		dialog.destroy()
-
+	
 	#
 	# # Callback functions for the toolbox
 	#
-	def full_screen(self, button):
-		if self.window_mode == 0:	
-			self.window_mode = 1
-			self.window.fullscreen()
-			screen = self.window.get_screen()
-			# self.max_img_height, self.max_img_width = screen.get_width(), screen.get_height()
+	def full_screen(self, button):	
+		if self.fs_mode == 0:
+			self.fs_mode = 1
+			self.fs_window.show()
 			self.modify_image()
 		else:
-			self.window_mode = 0
-			self.window.unfullscreen()
-			# self.max_img_height, self.max_img_width = self.stereo.allocation.height, self.stereo.allocation.width
+			self.fs_mode = 0
+			self.fs_window.destroy()
 			self.modify_image()
 
 	def onSizeClick(self, button):	
@@ -262,7 +284,7 @@ class GUI:
 		elif index > max:
 			index = 0
 
-		self.zoom_percent = 0
+		self.zoom_percent 	= 0
 		self.vergence 		= 0
 		self.src_info		= os.path.split(fichiers[index]) # Mise a jour
 		self.display_image(fichiers[index])
@@ -284,18 +306,18 @@ class GUI:
 		self.modify_image()
 	
 	#
-	# # Functions about first Eye
+	# # Functions about Eyes
 	#
 	def set_eye(self, side):
 		if side == "LEFT":
 			print "Swapping to left eye"
 			self.onEyeChange(True, False)
-			self.conf['eye'] = "LEFT"
-		elif side == "RIGHT":
+			self.gconf.set_string("/apps/tsv/general/eye", "LEFT")
+		else:
 			print "Swapping to right eye"
 			self.onEyeChange(False, True)
-			self.conf['eye'] = "RIGHT"
-				
+			self.gconf.set_string("/apps/tsv/general/eye", "RIGHT")
+		
 		self.img.swap_eyes()
 
 		try:
@@ -338,29 +360,34 @@ class GUI:
 		if mode == "INTERLACED":
 			import lib_interlaced
 			self.img = lib_interlaced.Interlaced()
-			self.conf['mode'] = "INTERLACED" # Polarized Monitors (Zalman,IZ3D) / eDimensional
+			self.gconf.set_string("/apps/tsv/general/mode", "INTERLACED") # Polarized Monitors (Zalman) / eDimensional
 			self.onModeChange(False, True, False, False, False)
 		elif mode == "ANAGLYPH":
 			import lib_anaglyph
 			self.img = lib_anaglyph.Anaglyph()
-			self.conf['mode'] = "ANAGLYPH" # red/cyan
+			self.gconf.set_string("/apps/tsv/general/mode", "ANAGLYPH") # red/cyan
 			self.onModeChange(True, False, False, False, False)
 		elif mode == "SHUTTERS":
 			import lib_shutter
 			self.img = lib_shutter.Shutter()
-			self.conf['mode'] = "SHUTTERS" # Nvidia 3D Vision / eDimensional
+			self.gconf.set_string("/apps/tsv/general/mode", "SHUTTERS") # Nvidia 3D Vision / eDimensional
 			self.onModeChange(False, False, True, False, False)
 		elif mode == "DUAL OUTPUT":
 			import lib_dualoutput
 			self.img = lib_dualoutput.DualOutput()
-			self.conf['mode'] = "DUAL OUTPUT"
+			self.gconf.set_string("/apps/tsv/general/mode", "DUAL OUTPUT")
 			self.onModeChange(False, False, False, True, False)
 		elif mode == "CHECKERBOARD":
 			import lib_checkerboard
 			self.img = lib_checkerboard.CheckerBoard()
-			self.conf['mode'] = "CHECKERBOARD"
+			self.gconf.set_string("/apps/tsv/general/mode", "CHECKERBOARD")
 			self.onModeChange(False, False, False, False, True)	
-		
+		else:
+			import lib_interlaced # TODO => MONOSCOPIC
+			self.img = lib_interlaced.Interlaced()
+			self.gconf.set_string("/apps/tsv/general/mode", "INTERLACED")
+			self.onModeChange(False, True, False, False, False)
+
 		try:
 			self.img.open2('None', [temp_left, temp_right])
 			self.modify_image() # refresh image
@@ -392,45 +419,28 @@ class GUI:
 	# # Functions for controlling the image display
 	#				
 	def display_image(self, fopen="None", anaglyph=False): # Opening an image
-		if fopen != "None":
-			self.img.open(fopen, anaglyph) # anaglyph = True if the image is an anaglyph
-			self.modify_image()
+		context_id = self.statusbar.get_context_id("Open")
+		self.statusbar.push(context_id, "Opening '"+fopen+"'")
 			
-	# display = gtk.gdk.display_get_default()
-	# print display.get_name() -> :0:0
-	# print self.window.set_screen(gtk.gdk.screen_get_default())
-	# gdk.screen_width(), gdk.screen_height()
+		self.vergence 	= 0 # reset decallage
+		self.src_info 	= os.path.split(fopen)	
+
+		self.img.open(fopen, anaglyph) # anaglyph = True if the image is an anaglyph
+		self.modify_image()
 		
+		self.statusbar.pop(context_id)
+	
 	def modify_image(self, force=0, normale=0): # Displaying the image (includes changes like size, vergence ...)
 		self.img.resize(self.max_width*(1 + self.zoom_percent), self.max_height*(1 + self.zoom_percent), force, normale)
-		self.img.make()
-
-
+		#thread.start_new_thread(self.img.make, (self, self.fs_mode))
+		self.img.make(self, self.fs_mode)
+	
 if __name__ == "__main__":
-	fopen = "None"
-	argv = sys.argv[1:]
-	
-	if len(argv) >= 1: # At least one argument
-		if argv[0][0] == "/": # autolaunch (i.e. nautilus)
-			fopen = ' '.join(argv[0:])
-		else:
-			try:
-				opts, args = getopt.getopt(argv, "hf:", ["help", "file="])
-				for opt, arg in opts: # Traitement des parametres
-					if opt in ("-h", "--help"):
-						usage()
-						sys.exit()
-					elif opt in ("-f", "--file"):
-						fopen = arg
-			except getopt.GetoptError, err:
-				print str(err)
-				usage()
-				sys.exit(2)
-	
-	def usage():
-		print "Tux Stereo Viewer"
-		print "Usage:"
-		print "    -h, --help : affiche ce message d'aide."
-		print "    -f, --file : ouvre le fichier specifie."
+	TSV = GUI()
 
-	GUI(fopen).main()
+	if len(sys.argv)>1:
+		if sys.argv[1][0] == "/":
+			fopen = ' '.join(sys.argv[1])
+			TSV.display_image(fopen, False)
+			
+	TSV.main()

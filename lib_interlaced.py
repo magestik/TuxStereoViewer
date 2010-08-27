@@ -44,7 +44,7 @@ class Interlaced:
 			taille = self.right.size
 			self.height, self.width = taille[1], taille[0]
 			
-	def make(self, parent):
+	def make(self, parent, fullscreen):
 		width 		= self.width + math.fabs(self.vergence)
 		height 		= self.height + math.fabs(self.vsep)
 		self.stereo = Image.new('RGB', (width,height)) # Final image
@@ -55,8 +55,11 @@ class Interlaced:
 			i = i + 1
 		
 		pixbuf = functions.image_to_pixbuf(self, self.stereo)
-		parent.stereo.set_from_pixbuf(pixbuf) # Display
-	
+		if fullscreen == 0:
+			parent.stereo.set_from_pixbuf(pixbuf) # Display in normal window
+		else:
+			parent.fs_image.set_from_pixbuf(pixbuf) # Display in fullscreen window
+			
 	def copyPaste(self, row, decallage):	
 		if row%2 == 0:
 			src = (0, row, self.width, row+1)

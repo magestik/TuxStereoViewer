@@ -22,24 +22,25 @@
                   <object class="GtkMenu" id="menu1">
                     <property name="visible">True</property>
                     <child>
-                      <object class="GtkImageMenuItem" id="imagemenuitem2">
+                      <object class="GtkImageMenuItem" id="openStereo">
                         <property name="label">Open Stereo Image</property>
                         <property name="visible">True</property>
-                        <property name="use_underline">True</property>
-                        <property name="use_stock">True</property>
-                        <signal name="activate" handler="file_open"/>
+                        <property name="image">image2</property>
+                        <property name="use_stock">False</property>
+                        <signal name="activate" handler="openStereo"/>
                       </object>
                     </child>
                     <child>
-                      <object class="GtkMenuItem" id="separation5">
-                        <property name="visible">True</property>
+                      <object class="GtkImageMenuItem" id="openAnaglyph">
                         <property name="label" translatable="yes">Open Anaglyph Image</property>
-                        <property name="use_underline">True</property>
-                        <signal name="activate" handler="open_ana"/>
+                        <property name="visible">True</property>
+                        <property name="image">image1</property>
+                        <property name="use_stock">False</property>
+                        <signal name="activate" handler="openAnaglyph"/>
                       </object>
                     </child>
                     <child>
-                      <object class="GtkImageMenuItem" id="imagemenuitem4">
+                      <object class="GtkImageMenuItem" id="save-as">
                         <property name="label">gtk-save-as</property>
                         <property name="visible">True</property>
                         <property name="use_underline">True</property>
@@ -52,7 +53,7 @@
                       </object>
                     </child>
                     <child>
-                      <object class="GtkImageMenuItem" id="imagemenuitem5">
+                      <object class="GtkImageMenuItem" id="quit">
                         <property name="label">gtk-quit</property>
                         <property name="visible">True</property>
                         <property name="use_underline">True</property>
@@ -103,6 +104,8 @@
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">Barre d'outils</property>
                         <property name="use_underline">True</property>
+                        <property name="active">True</property>
+                        <signal name="toggled" handler="onToolbarCheck"/>
                       </object>
                     </child>
                     <child>
@@ -110,6 +113,8 @@
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">Barre d'&#xE9;tat</property>
                         <property name="use_underline">True</property>
+                        <property name="active">True</property>
+                        <signal name="toggled" handler="onStatusbarCheck"/>
                       </object>
                     </child>
                     <child>
@@ -710,5 +715,24 @@
         </child>
       </object>
     </child>
+  </object>
+  <object class="GtkWindow" id="fullscreenWin">
+    <property name="destroy_with_parent">True</property>
+    <property name="decorated">False</property>
+    <signal name="key_press_event" handler="onKeyPressed"/>
+    <child>
+      <object class="GtkImage" id="fullscreenImage">
+        <property name="visible">True</property>
+        <property name="stock">gtk-missing-image</property>
+      </object>
+    </child>
+  </object>
+  <object class="GtkImage" id="image1">
+    <property name="visible">True</property>
+    <property name="stock">gtk-open</property>
+  </object>
+  <object class="GtkImage" id="image2">
+    <property name="visible">True</property>
+    <property name="stock">gtk-open</property>
   </object>
 </interface>
