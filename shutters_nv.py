@@ -17,10 +17,11 @@ class Nvidia:
 		self.cmd['WRITE']	= 0x01
 		self.cmd['READ'] 	= 0x02
 		self.cmd['CLEAR']	= 0x40
+		self.cmd['SET_EYE']	= 0xAA
 		
-		self.cmd['CLOCK']	 = 48000000LL
-		self.cmd['T0_CLOCK'] = (self.cmd['CLOCK']/12LL)
-		self.cmd['T2_CLOCK'] = (self.cmd['CLOCK']/ 4LL)
+		self.cmd['CLOCK']	 = 48000000
+		self.cmd['T0_CLOCK'] = self.cmd['CLOCK'] / 12
+		self.cmd['T2_CLOCK'] = self.cmd['CLOCK'] / 4
 
 		try:
 			self.handle = self.getDevice()
@@ -101,8 +102,7 @@ class Nvidia:
 			raise ValueError("Firmware not found !")
 		else:
 			print "Try to loading Firmware ..."
-			#uint8_t lenPos[4];
-			#uint8_t buf[1024];
+
 			while inline:
 				lenPos 	= fw.read(4)
 				length 	= (lenPos[0]<<8) | lenPos[1]
@@ -146,10 +146,10 @@ class Nvidia:
 		T2_COUNT = lambda x: (-(x)*(self.cmd['T2_CLOCK']/1000000)+1)
 
 		
-		w = T2_COUNT(4568.50)
-		x = T0_COUNT(4774.25)
-		y = T0_COUNT(self.frameTime)
-		z = T2_COUNT(self.activeTime)
+		w = int( T2_COUNT(4568.50))
+		x = int( T0_COUNT(4774.25))
+		y = int( T0_COUNT(self.frameTime))
+		z = int( T2_COUNT(self.activeTime))
 
 		cmdTimings = [ self.cmd['WRITE'], 0x00, 0x18, 0x00, 
 						w, w>>8, w>>16, w>>24,
@@ -174,14 +174,22 @@ class Nvidia:
 		cmd0x1b = [ self.cmd['WRITE'], 0x1b, 0x01, 0x00, 0x07 ]
 		self.write(2, cmd0x1b)
 
+	def setEye(self, first = 0, r = 0): # Swap Eye
+		if first == 0:
+			eye = 0xFE
+		else:
+			eye = 0xFF
+			
+		buf = [ self.cmd['SET_EYE'], eye, 0x00, 0x00, r, r>>8, 0xFF, 0xFF ]
+		self.write(1, buf)
 
 	def eventKeys(self): # Ask for key which have been pressed	
 		cmd1 = [self.cmd['READ'] | self.cmd['CLEAR'], 0x18, 0x03, 0x00]
 		self.write(2, cmd1)
 		
-		data = self.read(4, 4+cmd1[2])
+		data = self.read(4, 4)
 		
-		key 	= []
+		key 	= {}
 		key[1] 	= data[4] 			# Scroll
 		key[2]	= data[5] 			# Scroll + button
 		key[3]	= data[6] & 0x01; 	# Button
@@ -189,5 +197,9 @@ class Nvidia:
 
 if __name__ == "__main__":
 	nv = Nvidia()
-	sleep(2)
-	nv.eventKeys()
+	nv.setRefreshRate()
+	eye = 0
+	while True:
+		nv.setEye(eye)
+		eye = 1 - eye
+		nv.eventKeys()

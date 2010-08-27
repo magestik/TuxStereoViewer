@@ -442,5 +442,8 @@ if __name__ == "__main__":
 		if sys.argv[1][0] == "/":
 			fopen = ' '.join(sys.argv[1])
 			TSV.display_image(fopen, False)
-			
+	
+	devices = gtk.gdk.display_get_default().list_devices()
+	print devices[1].get_monitor_plug_name()
+	
 	TSV.main()
