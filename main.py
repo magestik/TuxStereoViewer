@@ -68,10 +68,10 @@ class GUI:
 		self.vertical_window	= self.interface.get_object("V-DualOutWin")
 		
 		# Quick configurations menus
-		
 		self.re_menu 		= self.interface.get_object("right_eye_menu")
 		self.le_menu 		= self.interface.get_object("left_eye_menu")
-
+		
+		self.mmode_menu		= self.interface.get_object("mono_mode_menu")
 		self.imode_menu		= self.interface.get_object("inter_mode_menu")
 		self.domode_menu	= self.interface.get_object("dualout_mode_menu")
 		self.amode_menu		= self.interface.get_object("ana_mode_menu")
@@ -356,37 +356,37 @@ class GUI:
 			temp_left, temp_right = self.img.left, self.img.right
 		except: # lib is not imported yet
 			temp_left, temp_right = '', ''
-		
-		if mode == "INTERLACED":
-			import lib_interlaced
-			self.img = lib_interlaced.Interlaced()
-			self.gconf.set_string("/apps/tsv/general/mode", "INTERLACED") # Polarized Monitors (Zalman) / eDimensional
-			self.onModeChange(False, True, False, False, False)
-		elif mode == "ANAGLYPH":
+
+		if mode == "ANAGLYPH":
 			import lib_anaglyph
 			self.img = lib_anaglyph.Anaglyph()
 			self.gconf.set_string("/apps/tsv/general/mode", "ANAGLYPH") # red/cyan
-			self.onModeChange(True, False, False, False, False)
+			self.onModeChange(False, True, False, False, False, False)
+		elif mode == "INTERLACED":
+			import lib_interlaced
+			self.img = lib_interlaced.Interlaced()
+			self.gconf.set_string("/apps/tsv/general/mode", "INTERLACED") # Polarized Monitors (Zalman) / eDimensional
+			self.onModeChange(False, False, True, False, False, False)
 		elif mode == "SHUTTERS":
 			import lib_shutter
 			self.img = lib_shutter.Shutter()
 			self.gconf.set_string("/apps/tsv/general/mode", "SHUTTERS") # Nvidia 3D Vision / eDimensional
-			self.onModeChange(False, False, True, False, False)
+			self.onModeChange(False, False, False, True, False, False)
 		elif mode == "DUAL OUTPUT":
 			import lib_dualoutput
 			self.img = lib_dualoutput.DualOutput()
 			self.gconf.set_string("/apps/tsv/general/mode", "DUAL OUTPUT")
-			self.onModeChange(False, False, False, True, False)
+			self.onModeChange(False, False, False, False, True, False)
 		elif mode == "CHECKERBOARD":
 			import lib_checkerboard
 			self.img = lib_checkerboard.CheckerBoard()
 			self.gconf.set_string("/apps/tsv/general/mode", "CHECKERBOARD")
-			self.onModeChange(False, False, False, False, True)	
-		else:
-			import lib_interlaced # TODO => MONOSCOPIC
+			self.onModeChange(False, False, False, False, False, True)	
+		else: # MONOSCOPIC
+			import lib_interlaced
 			self.img = lib_interlaced.Interlaced()
-			self.gconf.set_string("/apps/tsv/general/mode", "INTERLACED")
-			self.onModeChange(False, True, False, False, False)
+			self.gconf.set_string("/apps/tsv/general/mode", "MONOSCOPIC")
+			self.onModeChange(True, False, False, False, False, False)
 
 		try:
 			self.img.open2('None', [temp_left, temp_right])
@@ -396,7 +396,8 @@ class GUI:
 		
 		temp_left, temp_right = '', ''
 
-	def onModeChange(self, ana, int, shu, dout, che):
+	def onModeChange(self, mono, ana, int, shu, dout, che):
+		self.mmode_menu.set_active(mono) # Monoscopic
 		self.amode_menu.set_active(ana) # Anaglyph
 		self.imode_menu.set_active(int) # Interlaced
 		self.smode_menu.set_active(shu) # Shutters
@@ -432,7 +433,6 @@ class GUI:
 	
 	def modify_image(self, force=0, normale=0): # Displaying the image (includes changes like size, vergence ...)
 		self.img.resize(self.max_width*(1 + self.zoom_percent), self.max_height*(1 + self.zoom_percent), force, normale)
-		#thread.start_new_thread(self.img.make, (self, self.fs_mode))
 		self.img.make(self, self.fs_mode)
 	
 if __name__ == "__main__":
@@ -442,8 +442,5 @@ if __name__ == "__main__":
 		if sys.argv[1][0] == "/":
 			fopen = ' '.join(sys.argv[1])
 			TSV.display_image(fopen, False)
-	
-	devices = gtk.gdk.display_get_default().list_devices()
-	print devices[1].get_monitor_plug_name()
 	
 	TSV.main()

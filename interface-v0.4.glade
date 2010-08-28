@@ -144,6 +144,15 @@
                   <object class="GtkMenu" id="menu4">
                     <property name="visible">True</property>
                     <child>
+                      <object class="GtkCheckMenuItem" id="mono_mode_menu">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Monoscopic</property>
+                        <property name="use_underline">True</property>
+                        <property name="draw_as_radio">True</property>
+                        <signal name="toggled" handler="onModeClick"/>
+                      </object>
+                    </child>
+                    <child>
                       <object class="GtkCheckMenuItem" id="inter_mode_menu">
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">Interlaced</property>
