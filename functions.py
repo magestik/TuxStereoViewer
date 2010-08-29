@@ -19,12 +19,9 @@ def getConfig(self, mode):
 				config[key] = value.replace('\n', '')
 		file.close()
 	except:
-		config['mode'] = "ANAGLYPH"
-		config['type'] = "red/cyan"
-		config['eye'] = "LEFT"
-		config['hardware'] = "UNKNOW"
 		return 0 
-	return config
+	else:
+		return config
 
 def saveConfig(self, mode, conf):
 	dir 	= os.path.expanduser("~") + '/.stereo3D/'

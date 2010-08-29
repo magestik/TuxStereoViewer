@@ -5,7 +5,38 @@ import functions
 import Image
 import math, time
 
-class Shutter():
+from threading import Thread
+import gobject
+gobject.threads_init() # For prevent GTK freeze
+
+
+class controller(Thread):
+	def __init__(self, interface, left, right, rate):
+		Thread.__init__(self)
+		# Display variables
+		self.canvas = interface
+		self.left 	= left
+		self.right 	= right
+		self.rate	= rate
+		self.quit 	= False
+		
+	def loop(self):
+		condition = 0
+		i = 0
+		while not self.quit:
+			if(i == 0):
+				i = 1
+				self.canvas.set_from_pixbuf(self.left) # Display
+			else:
+				i = 0
+				self.canvas.set_from_pixbuf(self.right) # Display
+
+			time.sleep(self.rate)
+	
+	def run(self):
+		self.loop()
+
+class Shutter:
 	"Shutter Glasses support class"
 	
 	def __init__(self):	
@@ -18,13 +49,14 @@ class Shutter():
 		if self.conf == 0: # default configuration
 			self.conf = {}
 			self.conf['hardware'] = 'Nvidia3D' # OR eDimensionnal
-			self.conf['type'] = 'left/right' # See GenLock doc
+			self.conf['rate'] = '60'
 		
 		self.SpecialHardware("off")
 		
 	def __del__(self):
 		functions.saveConfig(self, 'shutter', self.conf)
-		self.SpecialHardware("off") # Shut Down Special Hardware
+		self.RefreshControl.quit = True
+		#self.SpecialHardware("off") # Shut Down Special Hardware
 		# exec("Genlock --off")
 	
 	def open(self, path, anaglyph=False):
@@ -45,24 +77,14 @@ class Shutter():
 			taille = self.right.size
 			self.height, self.width = taille[1], taille[0]
 
-	def make(self, parent):
+	def make(self, parent, fullscreen):
 		left 	= functions.image_to_pixbuf(self, self.left)
 		right 	= functions.image_to_pixbuf(self, self.right)
-		condition = 0
-		i = 0
-		while True:
-			if(i == 0):
-				i = 1
-				parent.stereo.set_from_pixbuf(left) # Display
-			else:
-				i = 0
-				parent.stereo.set_from_pixbuf(right) # Display
-
-			time.sleep(1)
-			
-			if condition == 1000:
-				break
-	
+		
+		rate 	= 1. / int(self.conf['rate'])
+		self.RefreshControl = controller(parent.stereo, left, right, rate)
+		self.RefreshControl.start()
+		
 	def swap_eyes(self):
 		self.left, self.right = self.right, self.left
 	

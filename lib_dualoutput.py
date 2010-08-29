@@ -44,7 +44,7 @@ class DualOutput:
 			taille = self.right.size
 			self.height, self.width = taille[1], taille[0]
 					 
-	def make(self, parent):
+	def make(self, parent, fullscreen):
 		image1 = functions.image_to_pixbuf(self, self.left) # Left OR Top
 		image2 = functions.image_to_pixbuf(self, self.right) # Right OR Bottom
 		location = parent.window.get_position()

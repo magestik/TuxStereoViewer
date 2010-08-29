@@ -17,7 +17,7 @@ class Interlaced:
 		self.conf	= functions.getConfig(self, 'interlaced')
 		if self.conf == 0: # default configuration
 			self.conf = {}
-			self.conf['hardware'] = 'Zalman' # OR  IZ3D
+			self.conf['hardware'] = 'Zalman'
 			self.conf['type'] = 'h1' # adaptable
 		
 		self.SpecialHardware("on")
@@ -49,28 +49,52 @@ class Interlaced:
 		height 		= self.height + math.fabs(self.vsep)
 		self.stereo = Image.new('RGB', (width,height)) # Final image
 		
-		i = 0
-		while i < self.height:
-			self.copyPaste(i, self.vergence)
-			i = i + 1
+		if self.conf['type'][0] == 'h':
+			self.make_horizontal()
+		else:
+			self.make_vertical()
 		
 		pixbuf = functions.image_to_pixbuf(self, self.stereo)
 		if fullscreen == 0:
 			parent.stereo.set_from_pixbuf(pixbuf) # Display in normal window
 		else:
 			parent.fs_image.set_from_pixbuf(pixbuf) # Display in fullscreen window
-			
-	def copyPaste(self, row, decallage):	
-		if row%2 == 0:
-			src = (0, row, self.width, row+1)
-			region = self.left.crop(src)
-			dst = (0, row, self.width, row+1)
-		else:
-			src = (0, row, self.width, row+1)
-			region = self.right.crop(src)
-			dst = (math.fabs(decallage), row, self.width+math.fabs(decallage), row+1)
-
-		self.stereo.paste(region, dst)
+	
+	def make_horizontal(self):
+		j = int(self.conf['type'][1])
+		
+		i = 0 # Left or right
+		y = 0 # Coordinate
+		while i < self.height:
+			if i%2 == 0:
+				src = (0, y, self.width, y+j)
+				region = self.left.crop(src)
+				dst = (0, y, self.width, y+j)
+			else:
+				src = (0, y, self.width, y+j)
+				region = self.right.crop(src)
+				dst = (math.fabs(self.vergence), y, self.width+math.fabs(self.vergence), y+j)
+			self.stereo.paste(region, dst)
+			i = i + 1
+			y = y + j
+	
+	def make_vertical(self):
+		j = int(self.conf['type'][1])
+		
+		i = 0 # Left or right
+		x = 0 # Coordinate
+		while i < self.width:
+			if i%2 == 0:
+				src = (x, 0, x+j, self.height)
+				region = self.left.crop(src)
+				dst = (x, 0, x+j, self.height)
+			else:
+				src = (x, 0, x+j, self.height)
+				region = self.right.crop(src)
+				dst = (x, math.fabs(self.vergence), x+j, self.height+math.fabs(self.vergence))
+			self.stereo.paste(region, dst)
+			i = i + 1
+			x = x + j
 	
 	def swap_eyes(self):
 		self.left, self.right = self.right, self.left

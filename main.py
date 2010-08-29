@@ -12,13 +12,12 @@ pygtk.require('2.0')
 import gtk
 
 #from gettext import gettext as _
+
+import sys, os, glob, getopt, string, webbrowser, gconf
+
 #print display.get_name() #-> :0:0
 #print self.window.set_screen(gtk.gdk.screen_get_default())
 #print gdk.screen_width(), gdk.screen_height()
-
-import sys, os, glob, getopt, string, webbrowser
-import functions
-import gconf
 
 class GUI:	
 	def main(self): # Main loop
@@ -440,7 +439,10 @@ if __name__ == "__main__":
 
 	if len(sys.argv)>1:
 		if sys.argv[1][0] == "/":
-			fopen = ' '.join(sys.argv[1])
-			TSV.display_image(fopen, False)
+			#fopen = ' '.join(sys.argv[1])
+			if os.path.exists(sys.argv[1]):
+				TSV.display_image(sys.argv[1], False)
+			else:
+				print "Image doesn't exist"
 	
 	TSV.main()

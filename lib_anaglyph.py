@@ -29,7 +29,7 @@ class Anaglyph:
 			size = self.left.size
 			self.height, self.width = size[1], size[0]
 		except:
-			print "Image doesn't exist !"
+			print "Error while opening"
 	
 	def open2(self, path='None', image='None'):
 		 if path != 'None':
@@ -40,7 +40,7 @@ class Anaglyph:
 			taille = self.right.size
 			self.height, self.width = taille[1], taille[0]
 	
-	def make(self, parent):
+	def make(self, parent, fullscreen):
 		width 		= self.width + math.fabs(self.vergence)
 		height 		= self.height + math.fabs(self.vsep)
 		self.stereo = Image.new('RGB', (width,height)) # Final image
@@ -50,20 +50,20 @@ class Anaglyph:
 
 		if self.conf['type'] == "red/cyan":
 			source = [rg, vd, bd]
-			print "red/cyan"
 		elif self.conf['type'] == "green/magenta":
 			source = [rd, vg, bd]
-			print "green/magenta"
 		elif self.conf['type'] == "blue/amber":
 			source = [rd, vd, bg]
-			print "blue/amber"
 		
-		# "R-V", "V-B", "B-R", "V-R", "B-V", "R-B"
+		# "R-V", "V-B", "B-R"
 
 		self.stereo = Image.merge("RGB", source)
 		
 		pixbuf = functions.image_to_pixbuf(self, self.stereo)
-		parent.stereo.set_from_pixbuf(pixbuf) # Display
+		if fullscreen == 0:
+			parent.stereo.set_from_pixbuf(pixbuf) # Display in normal window
+		else:
+			parent.fs_image.set_from_pixbuf(pixbuf) # Display in fullscreen window
 	
 	def resize(self, maxw, maxh, force=0, normal=0):
 		if normal == 1: # Scale 1:1

@@ -40,7 +40,7 @@ class CheckerBoard:
 			taille = self.right.size
 			self.height, self.width = taille[1], taille[0]
 
-	def make(self, parent):
+	def make(self, parent, fullscreen):
 		width 		= self.width + math.fabs(self.vergence)
 		height 		= self.height + math.fabs(self.vsep)
 		self.stereo = Image.new('RGB', (width,height)) # Final image
