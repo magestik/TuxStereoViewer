@@ -9,6 +9,7 @@ from threading import Thread
 import gobject
 gobject.threads_init() # For prevent GTK freeze
 
+import shutters_nv
 
 class controller(Thread):
 	def __init__(self, interface, left, right, rate):
@@ -20,9 +21,12 @@ class controller(Thread):
 		self.rate	= rate
 		self.quit 	= False
 		
+		self.dongle = shutters_nv.Nvidia()
+		self.dongle.setRefreshRate(rate)
+
 	def loop(self):
-		condition = 0
-		i = 0
+		i 	= 0
+		eye = 0
 		while not self.quit:
 			if(i == 0):
 				i = 1
@@ -30,8 +34,11 @@ class controller(Thread):
 			else:
 				i = 0
 				self.canvas.set_from_pixbuf(self.right) # Display
-
-			time.sleep(self.rate)
+			
+			self.dongle.setEye(i)
+			self.dongle.eventKeys()
+			
+			time.sleep(1. / self.rate)
 	
 	def run(self):
 		self.loop()
@@ -49,7 +56,7 @@ class Shutter:
 		if self.conf == 0: # default configuration
 			self.conf = {}
 			self.conf['hardware'] = 'Nvidia3D' # OR eDimensionnal
-			self.conf['rate'] = '60'
+			self.conf['rate'] 	= '120'
 		
 		self.SpecialHardware("off")
 		
@@ -81,8 +88,7 @@ class Shutter:
 		left 	= functions.image_to_pixbuf(self, self.left)
 		right 	= functions.image_to_pixbuf(self, self.right)
 		
-		rate 	= 1. / int(self.conf['rate'])
-		self.RefreshControl = controller(parent.stereo, left, right, rate)
+		self.RefreshControl = controller(parent.stereo, left, right, int(self.conf['rate']))
 		self.RefreshControl.start()
 		
 	def swap_eyes(self):

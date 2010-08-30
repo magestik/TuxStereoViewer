@@ -45,6 +45,15 @@ class Anaglyph:
 		height 		= self.height + math.fabs(self.vsep)
 		self.stereo = Image.new('RGB', (width,height)) # Final image
 		
+		self.make_colored()
+		
+		pixbuf = functions.image_to_pixbuf(self, self.stereo)
+		if fullscreen == 0:
+			parent.stereo.set_from_pixbuf(pixbuf) # Display in normal window
+		else:
+			parent.fs_image.set_from_pixbuf(pixbuf) # Display in fullscreen window
+	
+	def make_colored(self):
 		rg, vg, bg	= self.left.split()
 		rd, vd, bd 	= self.right.split()
 
@@ -55,16 +64,36 @@ class Anaglyph:
 		elif self.conf['type'] == "blue/amber":
 			source = [rd, vd, bg]
 		
-		# "R-V", "V-B", "B-R"
-
 		self.stereo = Image.merge("RGB", source)
 		
-		pixbuf = functions.image_to_pixbuf(self, self.stereo)
-		if fullscreen == 0:
-			parent.stereo.set_from_pixbuf(pixbuf) # Display in normal window
-		else:
-			parent.fs_image.set_from_pixbuf(pixbuf) # Display in fullscreen window
+	def make_halfColored(self):
+		rd, vd, bd 	= self.right.split()
+		
+		if self.conf['type'] == "red/cyan":
+			filter	= ( 0.299, 0.587, 0.114, 0,   0, 0, 0, 0,   0, 0, 0, 0 )
+			left 	= self.left.convert("RGB", filter)
+		elif self.conf['type'] == "green/magenta":
+			filter	= ( 0, 0, 0, 0,   0.299, 0.587, 0.114, 0,   0, 0, 0, 0 )
+			left 	= self.left.convert("RGB", filter)
+		elif self.conf['type'] == "blue/amber":
+			filter	= ( 0, 0, 0, 0,   0, 0, 0, 0,   0.299, 0.587, 0.114, 0 )
+			left 	= self.left.convert("RGB", filter)
+		
+		#self.stereo = Image.merge("RGB", source)
 	
+	def make_optimized(self):
+		if self.conf['type'] == "red/cyan":
+			filter 	= ( 0, 0.7, 0.3, 0,   0, 0, 0, 0,   0, 0, 0, 0 )
+			left 	= self.left.convert("RGB", filter)
+		elif self.conf['type'] == "green/magenta":
+			filter 	= ( 0, 0, 0, 0,   0, 0.7, 0.3, 0,   0, 0, 0, 0 )
+			left 	= self.left.convert("RGB", filter)
+		elif self.conf['type'] == "blue/amber":
+			filter 	= ( 0, 0, 0, 0,   0, 0, 0, 0,   0, 0.7, 0.3, 0 )
+			left 	= self.left.convert("RGB", filter)
+				
+		#self.stereo = Image.composite(left, right, left)
+			
 	def resize(self, maxw, maxh, force=0, normal=0):
 		if normal == 1: # Scale 1:1
 			self.right, self.left 	= self.oright, self.oleft  # Backup

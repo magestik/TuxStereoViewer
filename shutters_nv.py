@@ -202,4 +202,5 @@ if __name__ == "__main__":
 	while True:
 		nv.setEye(eye)
 		eye = 1 - eye
-		nv.eventKeys()
+		#nv.eventKeys()
+		sleep(1.0 / nv.rate)
