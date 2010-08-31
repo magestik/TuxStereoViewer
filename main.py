@@ -128,6 +128,18 @@ class GUI:
 		else:
 			self.toolbar.hide()
 			self.gconf.set_bool("/apps/tsv/general/toolbar", False)
+	
+	def onCursorStop(self):
+		pix_data = """/* XPM */
+		static char * invisible_xpm[] = {
+		"1 1 1 1",
+		"       c None",
+		" "};"""
+		color = gtk.gdk.Color()
+		pix = gtk.gdk.pixmap_create_from_data(None, pix_data, 1, 1, 1, color, color)
+		invisible = gtk.gdk.Cursor(pix, pix, color, color, 0, 0)
+		
+		b.window.set_cursor(invisible)
 
 	#
 	# # Shut down functions

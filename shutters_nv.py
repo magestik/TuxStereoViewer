@@ -2,6 +2,7 @@
 import usb
 import sys
 from time import sleep
+from time import clock
 
 # ! MUST BE ROOT ! #
 
@@ -22,7 +23,7 @@ class Nvidia:
 		self.cmd['CLOCK']	 = 48000000
 		self.cmd['T0_CLOCK'] = self.cmd['CLOCK'] / 12
 		self.cmd['T2_CLOCK'] = self.cmd['CLOCK'] / 4
-
+		print self.cmd
 		try:
 			self.handle = self.getDevice()
 		except:
@@ -113,8 +114,7 @@ class Nvidia:
 					raise ValueError("Error while loading firmware (buf != 1)")
 				
 				LIBUSB_REQUEST_TYPE_VENDOR = (0x02 << 5)
-				control_res = self.handle.controlMsg(LIBUSB_REQUEST_TYPE_VENDOR, 0xA0, buf, pos) 
-				#res = libusb_control_transfer(LIBUSB_REQUEST_TYPE_VENDOR, 0xA0, pos, 0x0000, buf, length, 0 );
+				control_res = self.handle.controlMsg(LIBUSB_REQUEST_TYPE_VENDOR, 0xA0, buf, pos)
 				
 				if control_res < 0:
 					raise ValueError("Error while loading firmware (res = %s)" % control_res)
@@ -142,8 +142,10 @@ class Nvidia:
 		self.activeTime	= 2080
 		
 		# First command
-		T0_COUNT = lambda x: (-(x)*(self.cmd['T0_CLOCK']/1000000)+1)
-		T2_COUNT = lambda x: (-(x)*(self.cmd['T2_CLOCK']/1000000)+1)
+		# 01 00 18 00 - E1 29 FF FF - 68 B5 FF FF - 81 DF FF FF
+		# 30 28 24 22 - 0A 08 05 04 - 61 79 F9 FF
+		T0_COUNT = lambda x: (-(x)*(self.cmd['T0_CLOCK']/1000000)+1) 
+		T2_COUNT = lambda x: (-(x)*(self.cmd['T2_CLOCK']/1000000)+1) 
 
 		
 		w = int( T2_COUNT(4568.50))
@@ -162,15 +164,18 @@ class Nvidia:
 		self.write(2, cmdTimings)
 		
 		# Second command
+		# 01 1C 02 00 02 00
 		cmd0x1c = [ self.cmd['WRITE'], 0x1c, 0x02, 0x00, 0x02, 0x00 ]
 		self.write(2, cmd0x1c)
 		
 		# Third command
-		timeout = self.rate * 2 
+		# 01 1E 02 00 F0 00
+		timeout = self.rate * 2
 		cmdTimeout = [ self.cmd['WRITE'], 0x1e, 0x02, 0x00, timeout, timeout>>8 ]
 		self.write(2, cmdTimeout)
 		
 		# Fourth command
+		# 01 1B 01 00 07
 		cmd0x1b = [ self.cmd['WRITE'], 0x1b, 0x01, 0x00, 0x07 ]
 		self.write(2, cmd0x1b)
 
@@ -180,27 +185,69 @@ class Nvidia:
 		else:
 			eye = 0xFF
 			
+		# AA FF 00 00 .. .. FF FF
+		# AA FE 00 00 .. .. FF FF
 		buf = [ self.cmd['SET_EYE'], eye, 0x00, 0x00, r, r>>8, 0xFF, 0xFF ]
 		self.write(1, buf)
-
-	def eventKeys(self): # Ask for key which have been pressed	
-		cmd1 = [self.cmd['READ'] | self.cmd['CLEAR'], 0x18, 0x03, 0x00]
+	
+	# Magestik add
+	def stopDevice(self, first = 0, r = 0): # stop shuttering ^^
+		cmd1 = [ self.cmd['READ'], 0x1b, 0x01, 0x00 ]
 		self.write(2, cmd1)
 		
-		data = self.read(4, 4)
+		data = self.read(4, 5) # 1b 01 00 04 07
 		
-		key 	= {}
-		key[1] 	= data[4] 			# Scroll
-		key[2]	= data[5] 			# Scroll + button
-		key[3]	= data[6] & 0x01; 	# Button
-		print key
+		cmd0x1b = [ self.cmd['WRITE'], 0x1b, 0x01, 0x00, 0x03 ]
+		self.write(2, cmd0x1b)	
+		
+		buf = [ self.cmd['SET_EYE'], 0xFF, 0x00, 0x00, 0x71, 0xD9, 0xFF, 0xFF ]
+		self.write(1, buf)		
+	
+	def eventKeys(self): # Ask for key which have been pressed	
+		# Time beetween calling this functions in the usblog
+		# 0.300 / 0.845 / 0.498 / 0.132 / 0.099 / 0.131 / 0.132 / 0.099 / 0.132 / 0.1 / 0.132 / 0.132 / 0.131 / 0.132 / 0.242
+		# When constant it's about every 16 eye swap
+		
+		# self.cmd['READ'] | self.cmd['CLEAR'] = 0x42 
+		cmd1 = [self.cmd['READ'] | self.cmd['CLEAR'], 0x18, 0x03, 0x00] # OK
+		self.write(2, cmd1)
+		
+		data = self.read(4, 4+cmd1[2])
+		
+		try:
+			key 	= {}
+		
+			key[1] 	= int(data[4]) 	# Scroll 
+			# PRINT => vers le bas = {1: 255, 2: 0, 3: 0} ou vers le haut = {1: 1, 2: 0, 3: 0}
+		
+			key[2]	= int(data[5]) # Scroll + button 
+			# PRINT => vers le bas =  {1: 0, 2: 255, 3: 0} ou vers le haut = {1: 0, 2: 1, 3: 0}
+		
+			key[3]	= int(data[6] & 0x01) # Button
+			# PRINT => {1: 0, 2: 0, 3: 1}
+
+			if key[1] > 0:
+				print key
+		except:
+			print "Key event Error"
 
 if __name__ == "__main__":
 	nv = Nvidia()
+	
+	nv.eventKeys() # Yeah we ask for keys here ... like in my usb log (I think it's for the "clear" command)
+	
 	nv.setRefreshRate()
+	
 	eye = 0
+	key = 0
 	while True:
 		nv.setEye(eye)
 		eye = 1 - eye
-		#nv.eventKeys()
+		
+		if key == 16:
+			nv.eventKeys()
+			key = 0
+		else:
+			key = key + 1
+		
 		sleep(1.0 / nv.rate)
