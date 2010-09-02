@@ -2,7 +2,7 @@
 import usb
 import sys
 from time import sleep
-from time import clock
+import time
 
 # ! MUST BE ROOT ! #
 
@@ -10,8 +10,6 @@ class Nvidia:
 	"Abstract class for Nvidia 3D Vision controll"
 	
 	def __init__(self):
-		self.validRefreshRate 	= [85, 100, 75, 72, 70, 60]
-		self.currentRefreshRate	= 0
 		self.eye				= 'left'
 		
 		self.cmd = {}
@@ -23,11 +21,12 @@ class Nvidia:
 		self.cmd['CLOCK']	 = 48000000
 		self.cmd['T0_CLOCK'] = self.cmd['CLOCK'] / 12
 		self.cmd['T2_CLOCK'] = self.cmd['CLOCK'] / 4
-		print self.cmd
+
 		try:
 			self.handle = self.getDevice()
 		except:
 			print "Can't initialise Nvidia 3D Vision"
+			sys.exit()
 		
 		try:
 			self.handle.setConfiguration(1) 
@@ -37,10 +36,12 @@ class Nvidia:
 		
 	def __del__(self):
 		try:
+			print "TRY TO STOP"
+			self.stopDevice()
 			self.handle.releaseInterface()
 			del self.handle
 		except: # n'existe pas
-			pass
+			print "ERROR WHILE STOPING"
 
 	#
 	# Functions for Writing/Reading in USB
@@ -95,43 +96,6 @@ class Nvidia:
 			self.endpoints.append(endpoint)
 			self.pipes.append(endpoint.address)
 		return count
-
-	def loadFirmware(self,filename):
-		try:
-			fw = open(filename, "rb")
-		except:
-			raise ValueError("Firmware not found !")
-		else:
-			print "Try to loading Firmware ..."
-
-			while inline:
-				lenPos 	= fw.read(4)
-				length 	= (lenPos[0]<<8) | lenPos[1]
-				pos    	= (lenPos[2]<<8) | lenPos[3]
-				buf 	= fw.read(lenght)
-				
-				if buf != 1:
-					raise ValueError("Error while loading firmware (buf != 1)")
-				
-				LIBUSB_REQUEST_TYPE_VENDOR = (0x02 << 5)
-				control_res = self.handle.controlMsg(LIBUSB_REQUEST_TYPE_VENDOR, 0xA0, buf, pos)
-				
-				if control_res < 0:
-					raise ValueError("Error while loading firmware (res = %s)" % control_res)
-			
-			fw.close()
-			
-			# Disconnecting
-			self.handle.reset() 
-			self.handle.releaseInterface()
-			del self.handle
-			sleep(250000 / 1000000.0)
-			
-			# Reconnecting
-			dev = self.findDevice(0x0007, 0x0955)
-			self.handle = dev.open()
-			self.handle.reset() 
-			sleep(250000 / 1000000.0)
 			
 	#
 	# Functions for controlling the Dongle
@@ -142,77 +106,65 @@ class Nvidia:
 		self.activeTime	= 2080
 		
 		# First command
-		# 01 00 18 00 - E1 29 FF FF - 68 B5 FF FF - 81 DF FF FF
-		# 30 28 24 22 - 0A 08 05 04 - 61 79 F9 FF
-		T0_COUNT = lambda x: (-(x)*(self.cmd['T0_CLOCK']/1000000)+1) 
-		T2_COUNT = lambda x: (-(x)*(self.cmd['T2_CLOCK']/1000000)+1) 
-
-		
-		w = int( T2_COUNT(4568.50))
-		x = int( T0_COUNT(4774.25))
-		y = int( T0_COUNT(self.frameTime))
-		z = int( T2_COUNT(self.activeTime))
-
-		cmdTimings = [ self.cmd['WRITE'], 0x00, 0x18, 0x00, 
-						w, w>>8, w>>16, w>>24,
-						x, x>>8, x>>16, x>>24, 
-						y, y>>8, y>>16, y>>24,
-						0x30, 0x28, 0x24, 0x22,
-						0x0a, 0x08, 0x05, 0x04,
-						z, z>>8, z>>16, z>>24 ]
-		
-		self.write(2, cmdTimings)
+		# 01 00 18 00   E1 29 FF FF   68 B5 FF FF   81 DF FF FF   30 28 24 22   0A 08 05 04   61 79 F9 FF
+		brutTimings = [ self.cmd['WRITE'], 0x00, 0x18, 0x00, 0xE1, 0x29, 0xFF, 0xFF, 0x68, 0xB5, 0xFF, 0xFF, 0x81, 0xDF, 0xFF, 0xFF, 0x30, 0x28, 0x24, 0x22, 0x0, 0x08, 0x05, 0x04, 0x61, 0x79, 0xF9, 0xFF]		
+		self.write(2, brutTimings) # OK
 		
 		# Second command
 		# 01 1C 02 00 02 00
-		cmd0x1c = [ self.cmd['WRITE'], 0x1c, 0x02, 0x00, 0x02, 0x00 ]
-		self.write(2, cmd0x1c)
+		cmd0x1c = [ self.cmd['WRITE'], 0x1c, 0x02, 0x00, 0x02, 0x00 ] 
+		self.write(2, cmd0x1c) # OK
 		
 		# Third command
 		# 01 1E 02 00 F0 00
 		timeout = self.rate * 2
-		cmdTimeout = [ self.cmd['WRITE'], 0x1e, 0x02, 0x00, timeout, timeout>>8 ]
-		self.write(2, cmdTimeout)
+		cmdTimeout = [ self.cmd['WRITE'], 0x1e, 0x02, 0x00, timeout, timeout>>8 ] 
+		self.write(2, cmdTimeout) # OK
 		
 		# Fourth command
 		# 01 1B 01 00 07
-		cmd0x1b = [ self.cmd['WRITE'], 0x1b, 0x01, 0x00, 0x07 ]
-		self.write(2, cmd0x1b)
-
-	def setEye(self, first = 0, r = 0): # Swap Eye
+		cmd0x1b = [ self.cmd['WRITE'], 0x1b, 0x01, 0x00, 0x07 ] 
+		self.write(2, cmd0x1b) # OK
+		
+		# Fifth command
+		# 01 1B 01 00 07
+		clear = [self.cmd['CLEAR'], 0x18, 0x03, 0x00] 
+		self.write(2, clear) # OK
+		
+	def setEye(self, first = 0, r = 0): # Swap Eyes
 		if first == 0:
 			eye = 0xFE
 		else:
 			eye = 0xFF
-			
+		
 		# AA FF 00 00 .. .. FF FF
 		# AA FE 00 00 .. .. FF FF
 		buf = [ self.cmd['SET_EYE'], eye, 0x00, 0x00, r, r>>8, 0xFF, 0xFF ]
-		self.write(1, buf)
+		self.write(1, buf) # => PROBLEM HERE (r is probably important) !
 	
 	# Magestik add
-	def stopDevice(self, first = 0, r = 0): # stop shuttering ^^
+	def stopDevice(self): # Tell the device we want to stop (?)
 		cmd1 = [ self.cmd['READ'], 0x1b, 0x01, 0x00 ]
-		self.write(2, cmd1)
+		self.write(2, cmd1) # OK
 		
-		data = self.read(4, 5) # 1b 01 00 04 07
+		data = self.read(4, 5) # 1b 01 00 04 07 => OK
 		
 		cmd0x1b = [ self.cmd['WRITE'], 0x1b, 0x01, 0x00, 0x03 ]
-		self.write(2, cmd0x1b)	
+		self.write(2, cmd0x1b) # OK
 		
 		buf = [ self.cmd['SET_EYE'], 0xFF, 0x00, 0x00, 0x71, 0xD9, 0xFF, 0xFF ]
-		self.write(1, buf)		
+		self.write(1, buf)	# OK
 	
 	def eventKeys(self): # Ask for key which have been pressed	
 		# Time beetween calling this functions in the usblog
 		# 0.300 / 0.845 / 0.498 / 0.132 / 0.099 / 0.131 / 0.132 / 0.099 / 0.132 / 0.1 / 0.132 / 0.132 / 0.131 / 0.132 / 0.242
-		# When constant it's about every 16 eye swap
+		# When constant it's about every 16 eye swap (at 120 Hz)
 		
-		# self.cmd['READ'] | self.cmd['CLEAR'] = 0x42 
-		cmd1 = [self.cmd['READ'] | self.cmd['CLEAR'], 0x18, 0x03, 0x00] # OK
-		self.write(2, cmd1)
+		# 42 18 03 00
+		cmd1 = [self.cmd['READ'] | self.cmd['CLEAR'], 0x18, 0x03, 0x00]
+		self.write(2, cmd1) # OK
 		
-		data = self.read(4, 4+cmd1[2])
+		data = self.read(4, 4+cmd1[2]) # OK but sometimes an error happens
 		
 		try:
 			key 	= {}
@@ -230,17 +182,19 @@ class Nvidia:
 				print key
 		except:
 			print "Key event Error"
-
+		
 if __name__ == "__main__":
 	nv = Nvidia()
-	
-	nv.eventKeys() # Yeah we ask for keys here ... like in my usb log (I think it's for the "clear" command)
+
+	nv.eventKeys() # Yeah we ask for keys here ... like in the usblog (I think it's for the "clear" command)
 	
 	nv.setRefreshRate()
-	
+
 	eye = 0
 	key = 0
 	while True:
+		t1 = time.time()
+		
 		nv.setEye(eye)
 		eye = 1 - eye
 		
@@ -250,4 +204,6 @@ if __name__ == "__main__":
 		else:
 			key = key + 1
 		
-		sleep(1.0 / nv.rate)
+		t2 = time.time()
+		
+		sleep((1.0 / nv.rate) - (t2-t1))
