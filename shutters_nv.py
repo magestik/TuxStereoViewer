@@ -10,7 +10,7 @@ class Nvidia:
 	"Abstract class for Nvidia 3D Vision controll"
 	
 	def __init__(self):
-		self.eye				= 'left'
+		self.eye			= 'left'
 		
 		self.cmd = {}
 		self.cmd['WRITE']	= 0x01
@@ -46,11 +46,17 @@ class Nvidia:
 	#
 	# Functions for Writing/Reading in USB
 	#
+	
+	# 4 endpoints
+	# 0x01 (1 | 0x00) => Write
+	# 0x81 (? | 0x??) => ???
+	# 0x02 (2 | 0x00) => Write
+	# 0x84 (4 | 0x80) => Read
+	
 	def write(self, endpoint, data, size = 0):
 		try:
 			LIBUSB_ENDPOINT_OUT = 0x00
 			self.handle.bulkWrite(endpoint | LIBUSB_ENDPOINT_OUT, data, 1000)
-			#self.handle.bulkWrite(self.pipes[pipeno-1], data, 1000)
 		except usb.USBError as e:
 			if e.args != ('No error',): # http://bugs.debian.org/476796
 				raise e
@@ -59,11 +65,10 @@ class Nvidia:
 		try:
 			LIBUSB_ENDPOINT_IN = 0x80
 			return self.handle.bulkRead(endpoint | LIBUSB_ENDPOINT_IN, size, 1000)
-			#return self.handle.bulkRead(self.pipes[pipeno-1], size, 1000)
 		except usb.USBError as e:
 			if e.args != ('No error',): # http://bugs.debian.org/476796
 				raise e
-	
+
 	#
 	# Functions for initialising the Controller
 	#
@@ -137,9 +142,21 @@ class Nvidia:
 		else:
 			eye = 0xFF
 		
+		parameter = {} # All possibilities
+		parameter['C0'] = { 0x0D, 0x4E, 0x8F, 0xD0 }
+		parameter['C1'] = { 0x11, 0x52, 0x93, 0xD4 }
+		parameter['C2'] = { 0x15, 0x56, 0x97, 0xD8 }
+		parameter['C3'] = { 0x19, 0x5A, 0x9B, 0xDC }
+		parameter['C4'] = { 0x1D, 0x5E, 0x9F, 0xE1 }
+		parameter['C5'] = { 0x21, 0x63, 0xA4, 0xE5 }
+		parameter['C6'] = { 0x25, 0x67, 0xA8, 0xE9 }
+		
+		a = 0x4E
+		b = 0xC0
+		
 		# AA FF 00 00 .. .. FF FF
 		# AA FE 00 00 .. .. FF FF
-		buf = [ self.cmd['SET_EYE'], eye, 0x00, 0x00, r, r>>8, 0xFF, 0xFF ]
+		buf = [ self.cmd['SET_EYE'], eye, 0x00, 0x00, a, b, 0xFF, 0xFF ]
 		self.write(1, buf) # => PROBLEM HERE (r is probably important) !
 	
 	# Magestik add

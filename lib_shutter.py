@@ -9,7 +9,7 @@ from threading import Thread
 import gobject
 gobject.threads_init() # For prevent GTK freeze
 
-import shutters_nv
+import socket
 
 class controller(Thread):
 	def __init__(self, interface, left, right, rate):
@@ -21,25 +21,40 @@ class controller(Thread):
 		self.rate	= rate
 		self.quit 	= False
 		
-		self.dongle = shutters_nv.Nvidia()
-		self.dongle.setRefreshRate(rate)
+		self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		self.socket.connect(("localhost", 5000))
 
 	def loop(self):
 		i 	= 0
 		eye = 0
+		count = 0
 		while not self.quit:
+			if count == 0:
+				c0 = time.time()
+			count = count + 1
+			
+			t1 = time.time()
+			
 			if(i == 0):
-				i = 1
+				self.socket.send('L')
 				self.canvas.set_from_pixbuf(self.left) # Display
+				i = 1
 			else:
-				i = 0
+				self.socket.send('R')
 				self.canvas.set_from_pixbuf(self.right) # Display
+				i = 0
 			
-			self.dongle.setEye(i)
-			self.dongle.eventKeys()
+			delay = (1./self.rate) - time.time() + t1
+			if delay > 0:
+				time.sleep(delay)
 			
-			time.sleep(1. / self.rate)
-	
+			if count == 120:
+				print time.time() - c0
+				count = 0
+		# Escaping from the loop
+		self.socket.send('q') # Tell the daemon we are going to quit
+		self.socket.close() # Quit
+		
 	def run(self):
 		self.loop()
 
