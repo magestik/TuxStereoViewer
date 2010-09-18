@@ -25,9 +25,11 @@ class controller(Thread):
 		self.socket.connect(("localhost", 5000))
 
 	def loop(self):
-		i 	= 0
-		eye = 0
-		count = 0
+		i 		= 0
+		eye 	= 0
+		count 	= 0
+		timeout = (1. / self.rate)
+		marge 	= 0.008 * timeout # 0.8% d'erreur
 		while not self.quit:
 			if count == 0:
 				c0 = time.time()
@@ -44,11 +46,11 @@ class controller(Thread):
 				self.canvas.set_from_pixbuf(self.right) # Display
 				i = 0
 			
-			delay = (1./self.rate) - time.time() + t1
+			delay = timeout - marge - time.time() + t1 
 			if delay > 0:
 				time.sleep(delay)
 			
-			if count == 120:
+			if count == self.rate:
 				print time.time() - c0
 				count = 0
 		# Escaping from the loop
@@ -71,7 +73,7 @@ class Shutter:
 		if self.conf == 0: # default configuration
 			self.conf = {}
 			self.conf['hardware'] = 'Nvidia3D' # OR eDimensionnal
-			self.conf['rate'] 	= '120'
+			self.conf['rate'] 	= '60'
 		
 		self.SpecialHardware("off")
 		
