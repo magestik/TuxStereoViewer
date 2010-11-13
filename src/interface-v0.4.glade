@@ -263,27 +263,6 @@
                       </object>
                     </child>
                     <child>
-                      <object class="GtkMenuItem" id="online_help">
-                        <property name="visible">True</property>
-                        <property name="label" translatable="yes">Obtenir de l'aide en ligne...</property>
-                        <property name="use_underline">True</property>
-                        <signal name="activate" handler="online_help"/>
-                      </object>
-                    </child>
-                    <child>
-                      <object class="GtkMenuItem" id="translate">
-                        <property name="visible">True</property>
-                        <property name="label" translatable="yes">Traduire cette application...</property>
-                        <property name="use_underline">True</property>
-                        <signal name="activate" handler="translate"/>
-                      </object>
-                    </child>
-                    <child>
-                      <object class="GtkSeparatorMenuItem" id="menuitem8">
-                        <property name="visible">True</property>
-                      </object>
-                    </child>
-                    <child>
                       <object class="GtkImageMenuItem" id="imagemenuitem10">
                         <property name="label">gtk-about</property>
                         <property name="visible">True</property>

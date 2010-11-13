@@ -1,0 +1,12 @@
+
+[Desktop Entry]
+Version=0.1
+Encoding=UTF-8
+Name=Tux Stereo Viewer
+GenericName=Tux Stereo Viewer
+Comment=Stereo Images Viewer
+Exec=tuxstereoviewer %U
+Icon=/usr/share/pixmaps/tuxstereoviewer.png
+Terminal=false
+Type=Application
+Categories=Application;AudioVideo;

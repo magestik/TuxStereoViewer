@@ -5,7 +5,7 @@ import functions
 import Image
 import math, time
 
-from threading import dbus
+from threading import Thread
 import gobject
 gobject.threads_init() # For prevent GTK freeze
 

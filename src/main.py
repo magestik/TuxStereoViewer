@@ -163,17 +163,7 @@ class GUI:
 			self.options_dialog.hide()
 	
 	def offline_help(self, button):
-		print 'Not yet'
-					
-	def online_help(self, button):
-		url = 'https://answers.launchpad.net/tsv'
-		# Open URL in new window, raising the window if possible.
-		webbrowser.open_new(url)
-	
-	def translate(self, button):
-		url = 'https://translations.launchpad.net/tsv'
-		# Open URL in new window, raising the window if possible.
-		webbrowser.open_new(url)
+		print "Not yet"
 	
 	#
 	# # Open functions

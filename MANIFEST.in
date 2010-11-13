@@ -1,0 +1,6 @@
+include COPYING
+include README
+include setup.py
+recursive-include src *
+recursive-include datas *
+
