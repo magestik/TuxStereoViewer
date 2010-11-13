@@ -45,13 +45,17 @@ class Interlaced:
 			self.height, self.width = taille[1], taille[0]
 			
 	def make(self, parent, fullscreen):
-		width 		= self.width + math.fabs(self.vergence)
-		height 		= self.height + math.fabs(self.vsep)
-		self.stereo = Image.new('RGB', (width,height)) # Final image
+
 		
 		if self.conf['type'][0] == 'h':
+			width 		= self.width + math.fabs(self.vergence)
+			height 		= self.height + math.fabs(self.vsep)*2
+			self.stereo = Image.new('RGB', (width,height)) # Final image
 			self.make_horizontal()
 		else:
+			width 		= self.width + math.fabs(self.vergence)*2
+			height 		= self.height + math.fabs(self.vsep)
+			self.stereo = Image.new('RGB', (width,height)) # Final image
 			self.make_vertical()
 		
 		pixbuf = functions.image_to_pixbuf(self, self.stereo)
@@ -61,7 +65,7 @@ class Interlaced:
 			parent.fs_image.set_from_pixbuf(pixbuf) # Display in fullscreen window
 	
 	def make_horizontal(self):
-		j = int(self.conf['type'][1])
+		j = int(self.conf['type'][1]) # Height (in px) of the row
 		
 		i = 0 # Left or right
 		y = 0 # Coordinate
@@ -69,17 +73,43 @@ class Interlaced:
 			if i%2 == 0:
 				src = (0, y, self.width, y+j)
 				region = self.left.crop(src)
-				dst = (0, y, self.width, y+j)
+				
+				if self.vergence < 0:
+					CorrectedX = math.fabs(self.vergence)
+				else:
+					CorrectedX = 0
+				
+				if self.vsep < 0:
+					CorrectedY = math.fabs(self.vsep)*2
+				else:
+					CorrectedY = 0
+				
+				dst = (CorrectedX, CorrectedY+y, CorrectedX+self.width, CorrectedY+y+j)
+			
 			else:
 				src = (0, y, self.width, y+j)
 				region = self.right.crop(src)
-				dst = (math.fabs(self.vergence), y, self.width+math.fabs(self.vergence), y+j)
+				
+				if self.vergence > 0:
+					CorrectedX = self.vergence
+				else:
+					CorrectedX = 0
+				
+				if self.vsep > 0:
+					CorrectedY = math.fabs(self.vsep)*2
+				else:
+					CorrectedY = 0
+				
+				dst = (CorrectedX, CorrectedY+y, CorrectedX+self.width, CorrectedY+y+j)
+			
 			self.stereo.paste(region, dst)
+			
+			# Incrementation
 			i = i + 1
 			y = y + j
 	
 	def make_vertical(self):
-		j = int(self.conf['type'][1])
+		j = int(self.conf['type'][1]) # Width (in px) of the column
 		
 		i = 0 # Left or right
 		x = 0 # Coordinate
@@ -87,11 +117,34 @@ class Interlaced:
 			if i%2 == 0:
 				src = (x, 0, x+j, self.height)
 				region = self.left.crop(src)
-				dst = (x, 0, x+j, self.height)
+				
+				if self.vergence < 0:
+					CorrectedX = math.fabs(self.vergence)*2
+				else:
+					CorrectedX = 0
+				
+				if self.vsep < 0:
+					CorrectedY = math.fabs(self.vsep)
+				else:
+					CorrectedY = 0
+				
+				dst = (CorrectedX+x, CorrectedY, CorrectedX+x+j, CorrectedY+self.height)
 			else:
 				src = (x, 0, x+j, self.height)
 				region = self.right.crop(src)
-				dst = (x, math.fabs(self.vergence), x+j, self.height+math.fabs(self.vergence))
+				
+				if self.vergence > 0:
+					CorrectedX = math.fabs(self.vergence)*2
+				else:
+					CorrectedX = 0
+				
+				if self.vsep > 0:
+					CorrectedY = math.fabs(self.vsep)
+				else:
+					CorrectedY = 0
+
+				dst = (CorrectedX+x, CorrectedY, CorrectedX+x+j, CorrectedY+self.height)
+			
 			self.stereo.paste(region, dst)
 			i = i + 1
 			x = x + j

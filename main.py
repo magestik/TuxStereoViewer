@@ -30,7 +30,7 @@ class GUI:
 
 		self.window = self.interface.get_object("MainWin")
 		self.window.set_title("Tux Stereo Viewer")
-		self.window.set_icon( gtk.gdk.pixbuf_new_from_file('/usr/share/pixmaps/TuxStereoViewer-icon.png') )
+		self.window.set_icon( gtk.gdk.pixbuf_new_from_file(sys.path[0] +'/icon.png') )
 		self.window.maximize()
 		
 		self.window.connect("destroy", self.destroy)
@@ -38,8 +38,7 @@ class GUI:
 		
 		self.gconf = gconf.client_get_default()
 		self.gconf.add_dir("/apps/tsv/general", gconf.CLIENT_PRELOAD_NONE)
-		
-		#self.src_info		= os.path.split(fopen)
+
 		self.zoom_percent	= 0 # Zoom (in %)
 		self.vergence 		= 0 # Vergence (in px)
 		self.flag 			= False
@@ -69,13 +68,6 @@ class GUI:
 		# Quick configurations menus
 		self.re_menu 		= self.interface.get_object("right_eye_menu")
 		self.le_menu 		= self.interface.get_object("left_eye_menu")
-		
-		self.mmode_menu		= self.interface.get_object("mono_mode_menu")
-		self.imode_menu		= self.interface.get_object("inter_mode_menu")
-		self.domode_menu	= self.interface.get_object("dualout_mode_menu")
-		self.amode_menu		= self.interface.get_object("ana_mode_menu")
-		self.smode_menu		= self.interface.get_object("shutter_mode_menu")
-		self.cbmode_menu	= self.interface.get_object("checkerboard_menu")
 		
 		# Toolbar
 		self.toolbar 		= self.interface.get_object("QuickChangeToolbar")
@@ -192,7 +184,7 @@ class GUI:
 		dialog.set_default_response(gtk.RESPONSE_OK)
 		
 		filter = gtk.FileFilter()
-		filter.set_name("Images Stéréo") # S3D Formats
+		filter.set_name("Stereo Images") # S3D Formats
 		filter.add_pattern("*.jps")
 		filter.add_pattern("*.JPS")
 		filter.add_pattern("*.pns")
@@ -258,7 +250,7 @@ class GUI:
 			self.modify_image()
 		else:
 			self.fs_mode = 0
-			self.fs_window.destroy()
+			self.fs_window.hide()
 			self.modify_image()
 
 	def onSizeClick(self, button):	
@@ -282,7 +274,7 @@ class GUI:
 			mode = -1
 		
 		extension 	= "jps" # Only jps
-		path 			= self.src_info[0]
+		path		= self.src_info[0]
 
 		fichiers 	= glob.glob(path +"/*."+ extension)
 		fichiers.sort() # Alphabetical order
@@ -408,12 +400,12 @@ class GUI:
 		temp_left, temp_right = '', ''
 
 	def onModeChange(self, mono, ana, int, shu, dout, che):
-		self.mmode_menu.set_active(mono) # Monoscopic
-		self.amode_menu.set_active(ana) # Anaglyph
-		self.imode_menu.set_active(int) # Interlaced
-		self.smode_menu.set_active(shu) # Shutters
-		self.domode_menu.set_active(dout) # Dual Out
-		self.cbmode_menu.set_active(che) # Checkerboard
+		self.interface.get_object("mono_mode_menu").set_active(mono) # Monoscopic
+		self.interface.get_object("inter_mode_menu").set_active(int) # Interlaced
+		self.interface.get_object("dualout_mode_menu").set_active(dout) # Dual Out
+		self.interface.get_object("ana_mode_menu").set_active(ana) # Anaglyph
+		self.interface.get_object("shutter_mode_menu").set_active(shu) # Shutters
+		self.interface.get_object("checkerboard_menu").set_active(che) # Checkerboard
 
 	def onModeClick(self, button):
 		if self.flag == False:
