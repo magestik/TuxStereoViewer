@@ -5,14 +5,14 @@ import functions
 import Image
 import math, time
 
-from threading import Thread
+from threading import dbus
 import gobject
 gobject.threads_init() # For prevent GTK freeze
 
-import socket
+import dbus
 
 class controller(Thread):
-	def __init__(self, interface, left, right, rate):
+	def __init__(self, shutters, interface, left, right, rate):
 		Thread.__init__(self)
 		# Display variables
 		self.canvas = interface
@@ -20,11 +20,14 @@ class controller(Thread):
 		self.right 	= right
 		self.rate	= rate
 		self.quit 	= False
-		
-		self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		self.socket.connect(("localhost", 5000))
-
+	
 	def loop(self):
+		start = shutters.get_dbus_method('start', 'org.stereo3d.shutters')
+		swap = shutters.get_dbus_method('swap', 'org.stereo3d.shutters')
+		stop = shutters.get_dbus_method('stop', 'org.stereo3d.shutters')
+		
+		start() # starting the USB IR emitter
+		
 		i 		= 0
 		eye 	= 0
 		count 	= 0
@@ -38,11 +41,11 @@ class controller(Thread):
 			t1 = time.time()
 			
 			if(i == 0):
-				self.socket.send('L')
+				eye = swap('left')
 				self.canvas.set_from_pixbuf(self.left) # Display
 				i = 1
 			else:
-				self.socket.send('R')
+				eye = swap('right')
 				self.canvas.set_from_pixbuf(self.right) # Display
 				i = 0
 			
@@ -53,9 +56,8 @@ class controller(Thread):
 			if count == self.rate:
 				print time.time() - c0
 				count = 0
-		# Escaping from the loop
-		self.socket.send('q') # Tell the daemon we are going to quit
-		self.socket.close() # Quit
+		
+		stop() # stopping the USB IR emitter
 		
 	def run(self):
 		self.loop()
@@ -103,8 +105,14 @@ class Shutter:
 		left 	= functions.image_to_pixbuf(self, self.left)
 		right 	= functions.image_to_pixbuf(self, self.right)
 		
-		self.RefreshControl = controller(parent.stereo, left, right, int(self.conf['rate']))
-		self.RefreshControl.start()
+		try:
+			bus = dbus.SessionBus()
+			shutters = bus.get_object('org.stereo3d.shutters', '/org/stereo3d/shutters')
+			self.RefreshControl = controller(parent.stereo, shutters, left, right, int(self.conf['rate']))
+		except:
+			print "Can't connect to the daemon !" # GTK POP-UP ?
+		else:
+			self.RefreshControl.start()
 		
 	def swap_eyes(self):
 		self.left, self.right = self.right, self.left
