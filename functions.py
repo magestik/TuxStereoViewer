@@ -12,10 +12,10 @@ import StringIO, string, binascii
 # BASIC "OPEN" FUNCTIONS
 # 
 def set_sources_from_stereo(self, src, ana=False): 
-	if is_anaglyph(src):
-		return open_anaglyph(src)
+	#if is_anaglyph(src):
+	#	return open_anaglyph(src)
 	
-	elif is_mpo(src):
+	if is_mpo(src):
 		return open_mpo(src)
 		
 	else: # Open side-by-side image

@@ -386,8 +386,8 @@ class GUI:
 			self.gconf.set_string("/apps/tsv/general/mode", "CHECKERBOARD")
 			self.onModeChange(False, False, False, False, False, True)	
 		else: # MONOSCOPIC
-			import lib_interlaced
-			self.img = lib_interlaced.Interlaced()
+			import lib_freeview
+			self.img = lib_freeview.Simple()
 			self.gconf.set_string("/apps/tsv/general/mode", "MONOSCOPIC")
 			self.onModeChange(True, False, False, False, False, False)
 

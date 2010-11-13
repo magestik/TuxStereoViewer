@@ -80,8 +80,6 @@ class Shutter:
 	def __del__(self):
 		functions.saveConfig(self, 'shutter', self.conf)
 		self.RefreshControl.quit = True
-		#self.SpecialHardware("off") # Shut Down Special Hardware
-		# exec("Genlock --off")
 	
 	def open(self, path, anaglyph=False):
 		try:
@@ -126,11 +124,3 @@ class Shutter:
 				self.right, self.left 	= self.oright, self.oleft  # Backup
 				self.right, self.left 	= self.right.resize((width, height), Image.ANTIALIAS), self.left.resize((width, height), Image.ANTIALIAS)
 				self.height, self.width = height, width
-
-	def SpecialHardware(self, go='on'): # Special Hardware actvation
-		if go == 'on':
-			if self.conf['hardware'] == 'eDimensionnal':
-				exec('edimActivator --SHUTTER') # activate eDimensionnal in Shutter Mode
-		else:
-			if self.conf['hardware'] == 'eDimensionnal':
-				exec('edimActivator --OFF')

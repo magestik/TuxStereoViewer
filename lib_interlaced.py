@@ -19,14 +19,11 @@ class Interlaced:
 			self.conf = {}
 			self.conf['hardware'] = 'Zalman'
 			self.conf['type'] = 'h1' # adaptable
-		
-		self.SpecialHardware("on")
 
 	def __del__(self):
 		functions.saveConfig(self, 'interlaced', self.conf)
-		self.SpecialHardware("off")
 
-	def open(self, path, anaglyph=False): # TODO Open Anaglyph doesn't work anymore
+	def open(self, path, anaglyph=False):
 		try:
 			self.left, self.right 	= functions.set_sources_from_stereo(self, path, anaglyph)
 			self.oleft, self.oright = self.left, self.right # Back-up
@@ -167,11 +164,3 @@ class Interlaced:
 				self.right, self.left 	= self.oright, self.oleft  # Backup
 				self.right, self.left 	= self.right.resize((width, height), Image.ANTIALIAS), self.left.resize((width, height), Image.ANTIALIAS)
 				self.height, self.width = height, width
-				
-	def SpecialHardware(self, go='on'): # Special Hardware actvation
-		if go == 'on':
-			if self.conf['hardware'] == 'eDimensionnal':
-				exec('edimActivator --INTERLACED') # activate eDimensionnal in Interlaced Mode
-		else:
-			if self.conf['hardware'] == 'eDimensionnal':
-				exec('edimActivator --OFF')
