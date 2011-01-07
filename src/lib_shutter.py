@@ -5,6 +5,14 @@ import functions
 import Image
 import math, time
 
+import sys
+import pygtk
+pygtk.require('2.0')
+import gtk
+import gtk.gtkgl
+from OpenGL.GL import *
+from OpenGL.GLU import *
+
 from threading import Thread
 import gobject
 gobject.threads_init() # For prevent GTK freeze
@@ -42,11 +50,11 @@ class controller(Thread):
 			
 			if(i == 0):
 				eye = swap('left')
-				self.canvas.set_from_pixbuf(self.left) # Display
+				#self.canvas.set_from_pixbuf(self.left) # Display
 				i = 1
 			else:
 				eye = swap('right')
-				self.canvas.set_from_pixbuf(self.right) # Display
+				#self.canvas.set_from_pixbuf(self.right) # Display
 				i = 0
 			
 			delay = timeout - marge - time.time() + t1 
@@ -65,7 +73,7 @@ class controller(Thread):
 class Shutter:
 	"Shutter Glasses support class"
 	
-	def __init__(self):	
+	def __init__(self, parent):	
 		self.vergence			= 0  # Horizontal separation
 		self.vsep				= 0  # Vertical separation
 		self.left 	= self.right = '' # Right and left Images
@@ -77,11 +85,33 @@ class Shutter:
 			self.conf['hardware'] = 'Nvidia3D' # OR eDimensionnal
 			self.conf['rate'] 	= '60'
 		
-		self.SpecialHardware("off")
+		print "OpenGL extension version - %d.%d\n" % gtk.gdkgl.query_version()
+		display_mode = ( gtk.gdkgl.MODE_RGB | gtk.gdkgl.MODE_DEPTH | gtk.gdkgl.MODE_DOUBLE )
+		try:
+			glconfig = gtk.gdkgl.Config(mode=display_mode)
+		except gtk.gdkgl.NoMatches:
+			display_mode &= ~gtk.gdkgl.MODE_DOUBLE
+			glconfig = gtk.gdkgl.Config(mode=display_mode)
+		
+		print "is RGBA:", glconfig.is_rgba()
+		print "is double-buffered:", glconfig.is_double_buffered()
+		print "is stereo:", glconfig.is_stereo()
+		print "has alpha:", glconfig.has_alpha()
+		print "has depth buffer:", glconfig.has_depth_buffer()
+		print "has stencil buffer:", glconfig.has_stencil_buffer()
+		print "has accumulation buffer:", glconfig.has_accum_buffer()
+		self.parent = parent
+		# Drawing Area
+		parent.stereo = GlDrawingArea(glconfig, self)
+		#parent.stereo.set_size_request(WIDTH, HEIGHT)
 		
 	def __del__(self):
 		functions.saveConfig(self, 'shutter', self.conf)
-		self.RefreshControl.quit = True
+		self.parent.stereo = gtk.DrawingArea()
+		try:
+			self.RefreshControl.quit = True
+		except:
+			print "Stop nothing ?"
 	
 	def open(self, path, anaglyph=False):
 		try:
@@ -102,8 +132,11 @@ class Shutter:
 			self.height, self.width = taille[1], taille[0]
 
 	def make(self, parent, fullscreen):
-		left 	= functions.image_to_pixbuf(self, self.left)
-		right 	= functions.image_to_pixbuf(self, self.right)
+		left = functions.image_to_drawable(self, self.left)
+		right = functions.image_to_drawable(self, self.right)
+		
+		#left 	= functions.image_to_pixbuf(self, self.left)
+		#right 	= functions.image_to_pixbuf(self, self.right)
 		
 		try:
 			bus = dbus.SessionBus()
@@ -132,3 +165,35 @@ class Shutter:
 				self.right, self.left 	= self.oright, self.oleft  # Backup
 				self.right, self.left 	= self.right.resize((width, height), Image.ANTIALIAS), self.left.resize((width, height), Image.ANTIALIAS)
 				self.height, self.width = height, width
+
+class GlDrawingArea(gtk.DrawingArea, gtk.gtkgl.Widget):
+    def __init__(self, glconfig, app):
+        gtk.DrawingArea.__init__(self)
+        self.set_colormap(glconfig.get_colormap())
+        self._app = app
+        # Set OpenGL-capability to the drawing area
+        self.set_gl_capability(glconfig)
+	
+	def Surface(self):
+		glDisable(GL_CULL_FACE)
+		glMap2f(GL_MAP2_VERTEX_3, 0, 1, 0, 1, ctrlpoints)
+		glMap2f(GL_MAP2_TEXTURE_COORD_2, 0, 1, 0, 1, texpts)
+		glEnable(GL_MAP2_TEXTURE_COORD_2)
+		glEnable(GL_MAP2_VERTEX_3)
+		glMapGrid2f(20, 0.0, 1.0, 20, 0.0, 1.0)
+		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL)
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
+		print type(self.image)
+		glTexImage2D(GL_TEXTURE_2D, 0, 3, self.imageWidth, self.imageHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, self.image)
+		glEnable(GL_TEXTURE_2D)
+		glEnable(GL_DEPTH_TEST)
+		glEnable(GL_NORMALIZE)
+		glShadeModel(GL_FLAT)
+		
+		self.list = glGenLists(1)
+		glNewList(self.list, GL_COMPILE)
+		glEvalMesh2(GL_FILL, 0, 20, 0, 20)
+		glEndList()

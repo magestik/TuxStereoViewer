@@ -60,8 +60,12 @@ class CheckerBoard:
 			i = i + 1
 		self.stereo.putdata(destpix) 	
 		
-		pixbuf = functions.image_to_pixbuf(self, self.stereo)
-		parent.stereo.set_from_pixbuf(pixbuf) # Display
+		drawable = functions.image_to_drawable(self, self.stereo)
+		
+		parent.stereo.window.clear()
+		x = (parent.max_width - width) / 2
+		y = (parent.max_height - height) / 2
+		parent.stereo.window.draw_drawable(parent.gc, drawable, 0, 0, x, y, -1, -1)
 	
 	def resize(self, maxw, maxh, force=0, normal=0):
 		if normal == 1: # Scale 1:1

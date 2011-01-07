@@ -37,9 +37,15 @@ class Simple:
 			
 	def make(self, parent, fullscreen):
 		self.stereo = self.left
-		pixbuf = functions.image_to_pixbuf(self, self.stereo)
+		#pixbuf = functions.image_to_pixbuf(self, self.stereo)
+		drawable = functions.image_to_drawable(self, self.stereo)
+		
 		if fullscreen == 0:
-			parent.stereo.set_from_pixbuf(pixbuf) # Display in normal window
+			#parent.stereo.set_from_pixbuf(pixbuf) # Display in normal window
+			parent.stereo.window.clear()
+			x = (parent.max_width - self.width) / 2
+			y = (parent.max_height - self.height) / 2
+			parent.stereo.window.draw_drawable(parent.gc, drawable, 0, 0, x, y, -1, -1)
 		else:
 			parent.fs_image.set_from_pixbuf(pixbuf) # Display in fullscreen window
 	

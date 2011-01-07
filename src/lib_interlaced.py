@@ -55,9 +55,21 @@ class Interlaced:
 			self.stereo = Image.new('RGB', (width,height)) # Final image
 			self.make_vertical()
 		
-		pixbuf = functions.image_to_pixbuf(self, self.stereo)
+		#pixbuf = functions.image_to_pixbuf(self, self.stereo)
+		drawable = functions.image_to_drawable(self, self.stereo)
+		
 		if fullscreen == 0:
-			parent.stereo.set_from_pixbuf(pixbuf) # Display in normal window
+			#parent.stereo.set_from_pixbuf(pixbuf) # Display in normal window
+			parent.stereo.window.clear()
+			x = (parent.max_width - width) / 2
+			y = (parent.max_height - height) / 2
+			
+			if self.conf['type'][0] == 'h' and x%2 == 0:
+				x += 1
+			if self.conf['type'][0] == 'v' and y%2 == 0:
+				y += 1
+			
+			parent.stereo.window.draw_drawable(parent.gc, drawable, 0, 0, x, y, -1, -1)
 		else:
 			parent.fs_image.set_from_pixbuf(pixbuf) # Display in fullscreen window
 	

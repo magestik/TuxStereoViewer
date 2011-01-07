@@ -5,7 +5,7 @@ try:
 	import psyco
 	psyco.full();
 except:
-	print "You can install Psyco to improove the rendering speed"
+	print "You can install Python-Psyco to improve the rendering speed"
 
 import pygtk
 pygtk.require('2.0')
@@ -13,11 +13,7 @@ import gtk
 
 #from gettext import gettext as _
 
-import sys, os, glob, getopt, string, webbrowser, gconf
-
-#print display.get_name() #-> :0:0
-#print self.window.set_screen(gtk.gdk.screen_get_default())
-#print gdk.screen_width(), gdk.screen_height()
+import sys, os, glob, getopt, string, gconf, time
 
 class GUI:	
 	def main(self): # Main loop
@@ -30,7 +26,7 @@ class GUI:
 
 		self.window = self.interface.get_object("MainWin")
 		self.window.set_title("Tux Stereo Viewer")
-		self.window.set_icon( gtk.gdk.pixbuf_new_from_file(sys.path[0] +'/icon.png') )
+		self.window.set_icon( gtk.gdk.pixbuf_new_from_file('/usr/share/pixmaps/tuxstereoviewer.png') )
 		self.window.maximize()
 		
 		self.window.connect("destroy", self.destroy)
@@ -41,19 +37,12 @@ class GUI:
 
 		self.zoom_percent	= 0 # Zoom (in %)
 		self.vergence 		= 0 # Vergence (in px)
+		self.fs_mode		= 0 # 1 = Fullscren ; 0 = Windowed
 		self.flag 			= False
-		self.stereo			= self.interface.get_object("stereo") # Where we want to display the stereo image
+		self.stereo			= self.interface.get_object("stereo") # Where we want to draw the stereo image
 		
 		self.about_dialog 	= self.interface.get_object("AboutWin")
 		self.options_dialog = self.interface.get_object("OptionsWin")
-		
-		# Fullscreen
-		self.fs_image 		= self.interface.get_object("fullscreenImage") # Where we want to display the fullscreen image
-		self.fs_window 		= self.interface.get_object("fullscreenWin")
-		self.fs_mode		= 0 # 1 = Fullscren ; 0 = Windowed
-		black 				= gtk.gdk.color_parse('#000000')
-		self.fs_window.modify_bg(gtk.STATE_NORMAL, black)
-		self.fs_window.fullscreen()
 		
 		# Dual Output Horizontal
 		self.doright		= self.interface.get_object("do-right") # Right image for h dual output format
@@ -66,45 +55,44 @@ class GUI:
 		self.vertical_window	= self.interface.get_object("V-DualOutWin")
 		
 		# Quick configurations menus
-		self.re_menu 		= self.interface.get_object("right_eye_menu")
-		self.le_menu 		= self.interface.get_object("left_eye_menu")
+		self.re_menu = self.interface.get_object("right_eye_menu")
+		self.le_menu = self.interface.get_object("left_eye_menu")
 		
 		# Toolbar
-		self.toolbar 		= self.interface.get_object("QuickChangeToolbar")
-		self.toolbar_check 	= self.interface.get_object("toolbar_check")
+		self.toolbar = self.interface.get_object("QuickChangeToolbar")
+		self.toolbar_check = self.interface.get_object("toolbar_check")
 		if self.gconf.get_bool("/apps/tsv/general/toolbar") == False:
 			self.toolbar_check.set_active(False)
 			self.toolbar.hide()
 		
 		# Statusbar
-		self.statusbar 	 = self.interface.get_object("statusBar")
+		self.statusbar = self.interface.get_object("statusBar")
 		self.statusbar_check = self.interface.get_object("statusbar_check")
 		if self.gconf.get_bool("/apps/tsv/general/statusbar") == False:
 			self.statusbar_check.set_active(False)
 			self.statusbar.hide()
-
+		
+		self.menubar = self.interface.get_object("MenuBar")	
 		self.set_mode( self.gconf.get_string("/apps/tsv/general/mode") )
 		self.set_eye( self.gconf.get_string("/apps/tsv/general/eye") )
 
 		self.interface.connect_signals(self)
 		self.window.show()
-
+		
+		style = self.stereo.get_style()
+		self.gc = style.fg_gc[gtk.STATE_NORMAL]
 		
 	def onSizeAllocate(self, win, alloc):
 		self.max_height = alloc[3] - alloc[1]
-		self.max_width 	= alloc[2] - alloc[0]
-	
+		self.max_width 	= alloc[2] - alloc[0]		
+		return True
+		
 	def onScroll(self, widget, event):
 		if event.direction == gtk.gdk.SCROLL_UP:
 			print "UP"
 		elif event.direction == gtk.gdk.SCROLL_DOWN:
 			print "DOWN"
-	
-	def onKeyPressed(self, widget, event):
-		if event.keyval == 65307 or event.keyval == 65480: # Escap / F11
-			if self.fs_mode == 1: # Fullscreen is active
-				self.full_screen(0)
-	
+					
 	def onStatusbarCheck(self, button):
 		if self.statusbar_check.get_active():
 			self.statusbar.show()
@@ -120,7 +108,7 @@ class GUI:
 		else:
 			self.toolbar.hide()
 			self.gconf.set_bool("/apps/tsv/general/toolbar", False)
-	
+			
 	def onCursorStop(self):
 		pix_data = """/* XPM */
 		static char * invisible_xpm[] = {
@@ -133,6 +121,40 @@ class GUI:
 		
 		b.window.set_cursor(invisible)
 
+	#
+	# # Fullscreen functions
+	#	
+	def onKeyPressed(self, widget, event):
+		print "press", gtk.gdk.keyval_name(event.keyval)
+		if event.keyval == 65307 or event.keyval == 65480: # Escap / F11
+			if self.fs_mode == 1:
+				self.fs_mode = 0
+				self.full_screen(0)
+				return True
+
+	def onFullScreenCheck(self, button):
+		if self.fs_mode == 0 and button.get_active():
+			self.fs_mode = 1
+			self.full_screen(1)
+		return True
+	
+	def onExpose(self, widget, event):
+		print event
+		self.modify_image()
+		return True
+	
+	def full_screen(self, mode):
+		if mode == 1 and mode == self.fs_mode:
+			#self.statusbar.hide()
+			#self.toolbar.hide()
+			#self.menubar.hide()
+			self.stereo.fullscreen()
+		elif mode == 0 and mode == self.fs_mode:
+			#self.statusbar.show()
+			#self.toolbar.show()
+			#self.menubar.show()
+			self.window.unfullscreen()
+	
 	#
 	# # Shut down functions
 	#
@@ -232,18 +254,9 @@ class GUI:
 	
 	#
 	# # Callback functions for the toolbox
-	#
-	def full_screen(self, button):	
-		if self.fs_mode == 0:
-			self.fs_mode = 1
-			self.fs_window.show()
-			self.modify_image()
-		else:
-			self.fs_mode = 0
-			self.fs_window.hide()
-			self.modify_image()
-
+	#		
 	def onSizeClick(self, button):	
+		# UGLY
 		if button.get_label() == 'unzoom':
 			self.zoom_percent -= 0.1
 			self.modify_image()
@@ -269,8 +282,8 @@ class GUI:
 		fichiers 	= glob.glob(path +"/*."+ extension)
 		fichiers.sort() # Alphabetical order
 
-		max 				= len(fichiers)-1 # file count
-		index 			= fichiers.index(path +"/"+ self.src_info[1]) + int(mode)
+		max 		= len(fichiers)-1 # file count
+		index 		= fichiers.index(path +"/"+ self.src_info[1]) + int(mode)
 		
 		if index < 0:
 			index = max
@@ -284,7 +297,7 @@ class GUI:
 	
 	def onSeperationClick(self, button):
 		print button
-		
+		# UGLY !
 		if button.get_label() == 'h+':
 			self.img.vergence -= 1
 		elif button.get_label() == 'h0':
@@ -295,7 +308,7 @@ class GUI:
 			self.img.vsep -= 1
 		elif button.get_label() == 'v+':
 			self.img.vsep += 1
-		
+
 		self.modify_image()
 	
 	#
@@ -312,11 +325,7 @@ class GUI:
 			self.gconf.set_string("/apps/tsv/general/eye", "RIGHT")
 		
 		self.img.swap_eyes()
-
-		try:
-			self.modify_image() # refresh image
-		except:
-			print "Eye changed, but image can not be modified"
+		self.modify_image() # refresh image
 	
 	def onEyeChange(self, left, right):
 		self.le_menu.set_active(left)
@@ -349,28 +358,28 @@ class GUI:
 			temp_left, temp_right = self.img.left, self.img.right
 		except: # lib is not imported yet
 			temp_left, temp_right = '', ''
-
-		if mode == "ANAGLYPH":
+		
+		if mode == "ANAGLYPH": #Red/Cyan and others
 			import lib_anaglyph
-			self.img = lib_anaglyph.Anaglyph()
-			self.gconf.set_string("/apps/tsv/general/mode", "ANAGLYPH") # red/cyan
+			self.img = lib_anaglyph.Anaglyph(self)
+			self.gconf.set_string("/apps/tsv/general/mode", "ANAGLYPH")
 			self.onModeChange(False, True, False, False, False, False)
-		elif mode == "INTERLACED":
+		elif mode == "INTERLACED": # Polarized Monitors (i.e. Zalman)
 			import lib_interlaced
 			self.img = lib_interlaced.Interlaced()
-			self.gconf.set_string("/apps/tsv/general/mode", "INTERLACED") # Polarized Monitors (Zalman) / eDimensional
+			self.gconf.set_string("/apps/tsv/general/mode", "INTERLACED")
 			self.onModeChange(False, False, True, False, False, False)
-		elif mode == "SHUTTERS":
+		elif mode == "SHUTTERS": # Nvidia 3D Vision / eDimensional
 			import lib_shutter
-			self.img = lib_shutter.Shutter()
-			self.gconf.set_string("/apps/tsv/general/mode", "SHUTTERS") # Nvidia 3D Vision / eDimensional
+			self.img = lib_shutter.Shutter(self)
+			self.gconf.set_string("/apps/tsv/general/mode", "SHUTTERS") 
 			self.onModeChange(False, False, False, True, False, False)
-		elif mode == "DUAL OUTPUT":
+		elif mode == "DUAL OUTPUT": # Two Projector
 			import lib_dualoutput
 			self.img = lib_dualoutput.DualOutput()
 			self.gconf.set_string("/apps/tsv/general/mode", "DUAL OUTPUT")
 			self.onModeChange(False, False, False, False, True, False)
-		elif mode == "CHECKERBOARD":
+		elif mode == "CHECKERBOARD": # SOME OLD (USA) 3D TV
 			import lib_checkerboard
 			self.img = lib_checkerboard.CheckerBoard()
 			self.gconf.set_string("/apps/tsv/general/mode", "CHECKERBOARD")
@@ -380,13 +389,9 @@ class GUI:
 			self.img = lib_freeview.Simple()
 			self.gconf.set_string("/apps/tsv/general/mode", "MONOSCOPIC")
 			self.onModeChange(True, False, False, False, False, False)
-
-		try:
-			self.img.open2('None', [temp_left, temp_right])
-			self.modify_image() # refresh image
-		except:
-			print "Mode changed, but image can not be modified"
 		
+		self.img.open2('None', [temp_left, temp_right])
+		self.modify_image() # refresh image	
 		temp_left, temp_right = '', ''
 
 	def onModeChange(self, mono, ana, int, shu, dout, che):
@@ -425,8 +430,16 @@ class GUI:
 		self.statusbar.pop(context_id)
 	
 	def modify_image(self, force=0, normale=0): # Displaying the image (includes changes like size, vergence ...)
-		self.img.resize(self.max_width*(1 + self.zoom_percent), self.max_height*(1 + self.zoom_percent), force, normale)
-		self.img.make(self, self.fs_mode)
+		try:
+			if self.fs_mode == 1:
+				self.img.resize(self.max_width, self.max_height, 1, 0)
+			else:
+				self.img.resize(self.max_width*(1 + self.zoom_percent), self.max_height*(1 + self.zoom_percent), force, normale)
+			
+			self.stereo.window.clear()	
+			self.img.make(self, self.fs_mode)
+		except Exception,e:
+			print "Error while rendering the image:", e
 	
 if __name__ == "__main__":
 	TSV = GUI()

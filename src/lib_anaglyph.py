@@ -8,7 +8,7 @@ import math
 class Anaglyph:
 	"Anaglyph support class"
 	
-	def __init__(self):
+	def __init__(self, parent):
 		self.vergence			= 0 # Horizontal separation
 		self.vsep				= 0 # Vertical separation
 		self.left 	= self.right = '' # Right and left Images
@@ -46,12 +46,12 @@ class Anaglyph:
 		self.stereo = Image.new('RGB', (width,height)) # Final image
 		
 		self.make_colored()
+
+		drawable = functions.image_to_drawable(self, self.stereo)
 		
-		pixbuf = functions.image_to_pixbuf(self, self.stereo)
-		if fullscreen == 0:
-			parent.stereo.set_from_pixbuf(pixbuf) # Display in normal window
-		else:
-			parent.fs_image.set_from_pixbuf(pixbuf) # Display in fullscreen window
+		x = (parent.max_width - width) / 2
+		y = (parent.max_height - height) / 2
+		parent.stereo.window.draw_drawable(parent.gc, drawable, 0, 0, x, y, -1, -1)
 	
 	def make_colored(self):
 		rg, vg, bg	= self.left.split()

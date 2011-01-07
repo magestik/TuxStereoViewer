@@ -20,11 +20,8 @@ class DualOutput:
 			self.conf['hardware'] = 'projectors' # OR eDimensionnal
 			self.conf['type'] = 'left/right' # OR top/bottom
 		
-		self.SpecialHardware("on")
-		
 	def __del__(self):
 		functions.saveConfig(self, 'dualoutput', self.conf)
-		self.SpecialHardware("off")
 		
 	def open(self, path, anaglyph=False):
 		try:
@@ -80,11 +77,3 @@ class DualOutput:
 				self.right, self.left 	= self.oright, self.oleft  # Backup
 				self.right, self.left 	= self.right.resize((width, height), Image.ANTIALIAS), self.left.resize((width, height), Image.ANTIALIAS)
 				self.height, self.width = height, width
-					
-	def SpecialHardware(self, go='on'): # Special Hardware actvation
-		if go == 'on':
-			if self.conf['hardware'] == 'eDimensionnal':
-				exec('edimActivator --DUALOUTPUT') # activate eDimensionnal in Side-by-side Mode
-		else:
-			if self.conf['hardware'] == 'eDimensionnal':
-				exec('edimActivator --OFF')

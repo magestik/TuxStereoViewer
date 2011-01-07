@@ -40,7 +40,18 @@ def image_to_pixbuf(self, image):
 	loader.write(contents, len(contents))
 	pixbuf = loader.get_pixbuf()
 	loader.close()
+	
 	return pixbuf
+	
+def image_to_drawable(self, image):
+	pixbuf = image_to_pixbuf(self, image)
+	
+	w,h = pixbuf.get_width(), pixbuf.get_height()
+	drawable = gtk.gdk.Pixmap(None, w, h, 24)
+	gc = drawable.new_gc()
+	drawable.draw_pixbuf(gc, pixbuf, 0,0,0,0,-1,-1)
+
+	return drawable
 
 #
 # BASIC "SAVE" FUNCTIONS

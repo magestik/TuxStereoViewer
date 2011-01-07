@@ -7,11 +7,12 @@
     <property name="height_request">550</property>
     <property name="default_width">780</property>
     <property name="default_height">550</property>
+    <signal name="key_press_event" handler="onKeyPressed"/>
     <child>
       <object class="GtkVBox" id="vbox1">
         <property name="visible">True</property>
         <child>
-          <object class="GtkMenuBar" id="menubar">
+          <object class="GtkMenuBar" id="MenuBar">
             <property name="visible">True</property>
             <child>
               <object class="GtkMenuItem" id="menuitem1">
@@ -123,12 +124,12 @@
                       </object>
                     </child>
                     <child>
-                      <object class="GtkMenuItem" id="f11">
+                      <object class="GtkCheckMenuItem" id="f11">
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">Plein &#xE9;cran</property>
                         <property name="use_underline">True</property>
                         <accelerator key="F11" signal="activate"/>
-                        <signal name="activate" handler="full_screen"/>
+                        <signal name="toggled" handler="onFullScreenCheck"/>
                       </object>
                     </child>
                   </object>
@@ -486,9 +487,9 @@
           </packing>
         </child>
         <child>
-          <object class="GtkImage" id="stereo">
+          <object class="GtkDrawingArea" id="stereo">
             <property name="visible">True</property>
-            <property name="stock">gtk-missing-image</property>
+            <signal name="expose_event" handler="onExpose"/>
             <signal name="size_allocate" handler="onSizeAllocate"/>
           </object>
           <packing>
@@ -701,17 +702,6 @@
             <property name="position">1</property>
           </packing>
         </child>
-      </object>
-    </child>
-  </object>
-  <object class="GtkWindow" id="fullscreenWin">
-    <property name="destroy_with_parent">True</property>
-    <property name="decorated">False</property>
-    <signal name="key_press_event" handler="onKeyPressed"/>
-    <child>
-      <object class="GtkImage" id="fullscreenImage">
-        <property name="visible">True</property>
-        <property name="stock">gtk-missing-image</property>
       </object>
     </child>
   </object>
